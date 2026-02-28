@@ -1,7 +1,5 @@
-import { useState } from "react"
-
 function Navbar() {
-    const [isAuthenticated, setIsAuthenticated] = useState(false);
+    const isAuthenticated = !localStorage.get('auth_token').includes(null, undefined, false);
 
     return (
         <nav className="bg-white w-full z-20 border-b border-gray-400">
