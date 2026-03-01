@@ -1,5 +1,5 @@
 function Navbar() {
-    const isAuthenticated = !localStorage.get('auth_token').includes(null, undefined, false);
+    const isAuthenticated = localStorage.getItem('auth_token') ?? false;
 
     return (
         <nav className="bg-white w-full z-20 border-b border-gray-400">
