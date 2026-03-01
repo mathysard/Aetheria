@@ -1,4 +1,3 @@
-import React from "react"
 import Navbar from "../components/Navbar"
 import BookCard from "../components/home/BookCard";
 import UserCard from "../components/home/UserCard";
