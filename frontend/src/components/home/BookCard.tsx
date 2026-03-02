@@ -5,7 +5,7 @@ interface PropsInterface {
     likeCount: number;
 }
 
-function BookCard({title, cover, readCount, likeCount}: PropsInterface) {
+const BookCard = ({title, cover, readCount, likeCount}: PropsInterface) => {
     const formatter = new Intl.NumberFormat("en-US", {
         notation: "compact"
     });

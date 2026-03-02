@@ -3,7 +3,7 @@ interface PropsInterface {
     profilePicture?: string;
 }
 
-function UserCard({username, profilePicture}: PropsInterface) {
+const UserCard = ({username, profilePicture}: PropsInterface) => {
   return (
     <div className="w-40 h-40">
         <div className="rounded-full overflow-hidden mb-2">

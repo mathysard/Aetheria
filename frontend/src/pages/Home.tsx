@@ -2,7 +2,7 @@ import Navbar from "../components/Navbar"
 import BookCard from "../components/home/BookCard";
 import UserCard from "../components/home/UserCard";
 
-function Home() {
+const Home = () => {
     return (
         <>
             <Navbar />

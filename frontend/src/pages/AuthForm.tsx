@@ -5,7 +5,7 @@ interface ErrorsInterface {
     [key: string]: string[];
 }
 
-function AuthForm() {
+const AuthForm = () => {
     const authState: "login"|"register" = window.location.pathname.split('/')[1].includes('login') ? 'login' : 'register';
     const [formErrors, setFormErrors] = useState<ErrorsInterface>();
 
