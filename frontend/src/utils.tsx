@@ -8,4 +8,11 @@ export const dataURIToBlob = (dataURI: string) => {
     for (let i = 0; i < byteString.length; i++) ia[i] = byteString.charCodeAt(i);
   
     return new Blob([ia], { type: mimeString });
-  };
+};
+
+// https://stackoverflow.com/questions/23150333/html5-javascript-dataurl-to-blob-blob-to-dataurl
+export const blobToDataURL = (blob: Blob, callback: (dataUrl: string) => void) => {
+    var a = new FileReader();
+    a.onload = function(e) {callback(e.target?.result as string);}
+    a.readAsDataURL(blob);
+}
