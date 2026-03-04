@@ -22,9 +22,10 @@ interface CharacterInterface {
 }
 
 interface RelationInterface {
-    characterOne: CharacterInterface|object,
-    characterTwo: CharacterInterface|object,
+    characterOne: CharacterInterface,
+    characterTwo: CharacterInterface,
     label: string;
+    uuid: string;
 }
 
 interface LocationInterface {
@@ -42,16 +43,19 @@ interface LocationInterface {
 
 interface CharacterCardInterface {
     character: CharacterInterface;
-    dialogRef: RefObject<HTMLDialogElement | null>
-    setChosenCharacter: React.Dispatch<React.SetStateAction<CharacterInterface | undefined>>
-    setCharacters: React.Dispatch<React.SetStateAction<CharacterInterface[]>>
+    dialogRef: RefObject<HTMLDialogElement | null>;
+    setChosenCharacter: React.Dispatch<React.SetStateAction<CharacterInterface | undefined>>;
+    setCharacters: React.Dispatch<React.SetStateAction<CharacterInterface[]>>;
+    setRelations: React.Dispatch<React.SetStateAction<RelationInterface[]>>;
 }
 
 interface CharacterFormInterface {
-    characters: CharacterInterface[],
-    setCharacters: React.Dispatch<React.SetStateAction<CharacterInterface[]>>,
-    charactersDivRef: Ref<HTMLDivElement>|undefined|null,
-    characterFormRef: Ref<HTMLDivElement>|undefined|null,
+    characters: CharacterInterface[];
+    setCharacters: React.Dispatch<React.SetStateAction<CharacterInterface[]>>;
+    relations: RelationInterface[];
+    setRelations: React.Dispatch<React.SetStateAction<RelationInterface[]>>;
+    charactersDivRef: Ref<HTMLDivElement>|undefined|null;
+    characterFormRef: Ref<HTMLDivElement>|undefined|null;
 }
 
 interface RelationFormInterface {
@@ -226,7 +230,7 @@ const BookForm = ({bookTitleRef, bookDescriptionRef, bookGenreRef, bookKeywordsR
     );
 }
 
-const CharacterCard = ({character, dialogRef, setChosenCharacter, setCharacters}: CharacterCardInterface) => {
+const CharacterCard = ({character, dialogRef, setChosenCharacter, setCharacters, setRelations}: CharacterCardInterface) => {
     return (
         <div className="bg-neutral-primary-soft block max-w-sm border border-default rounded-base shadow-xs w-[80%] mx-auto mb-8">
             <div className="w-full h-50 flex bg-gray-400">
@@ -250,7 +254,51 @@ const CharacterCard = ({character, dialogRef, setChosenCharacter, setCharacters}
                     stroke="red"
                     className="size-6 cursor-pointer"
                     onClick={() => {
-                        setCharacters(prev => prev.filter((val) => val.uuid !== character?.uuid))
+                        setCharacters(prev => {
+                            const foundCharacter = prev.find((val) => val.uuid == character?.uuid);
+                            setRelations(prev => {
+                                const relationsWithThisCharacter = prev.filter(val => val.characterOne?.uuid == foundCharacter?.uuid || val.characterTwo?.uuid == foundCharacter?.uuid);
+                                relationsWithThisCharacter.map(rel => {
+                                    if(rel.characterOne?.uuid == foundCharacter?.uuid) {
+                                        rel.characterOne = {
+                                            firstName: "",
+                                            middleNames: "",
+                                            lastName: "",
+                                            nickname: "",
+                                            gender: "",
+                                            pronouns: "",
+                                            race: "",
+                                            age: "",
+                                            uuid: "",
+                                            image: null,
+                                            imageBase64: "",
+                                            userFields: []
+                                        };
+                                    }
+                                    
+                                    if(rel.characterTwo?.uuid == foundCharacter?.uuid) {
+                                        rel.characterTwo = {
+                                            firstName: "",
+                                            middleNames: "",
+                                            lastName: "",
+                                            nickname: "",
+                                            gender: "",
+                                            pronouns: "",
+                                            race: "",
+                                            age: "",
+                                            uuid: "",
+                                            image: null,
+                                            imageBase64: "",
+                                            userFields: []
+                                        };
+                                    }
+                                })
+
+                                return prev.filter(val => val.characterOne?.uuid !== foundCharacter?.uuid && val.characterTwo?.uuid !== foundCharacter?.uuid);
+                            });
+
+                            return prev.filter((val) => val.uuid !== character?.uuid);
+                        })
                     }}
                 >
                     <path strokeLinecap="round" strokeLinejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
@@ -271,7 +319,7 @@ const CharacterCard = ({character, dialogRef, setChosenCharacter, setCharacters}
     );
 }
 
-const CharactersForm = ({characters, setCharacters, charactersDivRef, characterFormRef}: CharacterFormInterface) => {
+const CharactersForm = ({characters, setCharacters, setRelations, charactersDivRef, characterFormRef}: CharacterFormInterface) => {
     const [charactersDisplay, setCharactersDisplay] = useState(characters);
     const [chosenCharacter, setChosenCharacter] = useState<CharacterInterface>();
     const [, setLoadState] = useState(false);
@@ -337,7 +385,7 @@ const CharactersForm = ({characters, setCharacters, charactersDivRef, characterF
                 <div className={`w-full grid grid-cols-2 ${charactersDisplay.length && "mt-8"}`.trim()}>
                     {charactersDisplay.map((character: CharacterInterface) => (
                         <div key={`character-${character.uuid}`}>
-                            <CharacterCard character={character} dialogRef={dialogRef} setChosenCharacter={setChosenCharacter} setCharacters={setCharacters} />
+                            <CharacterCard character={character} dialogRef={dialogRef} setChosenCharacter={setChosenCharacter} setCharacters={setCharacters} setRelations={setRelations} />
                         </div>
                     ))}
                 </div>
@@ -704,28 +752,37 @@ const RelationsForm = ({relations, setRelations, characters, relationsDivRef}: R
                 <button
                     className="px-4 py-2 rounded-lg bg-blue-600 text-white font-semibold hover:bg-blue-800 hover:cursor-pointer active:bg-blue-900 shadow-xl disabled:bg-blue-400 disabled:cursor-not-allowed"
                     onClick={() => {
-                        const newRelation = {
+                        const newRelation: RelationInterface = {
                             characterOne: {
                                 firstName: "",
+                                middleNames: "",
                                 lastName: "",
                                 nickname: "",
                                 gender: "",
                                 pronouns: "",
                                 race: "",
                                 age: "",
+                                image: null,
+                                imageBase64: "",
+                                uuid: "",
                                 userFields: []
                             },
                             characterTwo: {
                                 firstName: "",
+                                middleNames: "",
                                 lastName: "",
                                 nickname: "",
                                 gender: "",
                                 pronouns: "",
                                 race: "",
                                 age: "",
+                                image: null,
+                                imageBase64: "",
+                                uuid: "",
                                 userFields: []
                             },
-                            label: ""
+                            label: "",
+                            uuid: createUniqueId()
                         };
 
                         setRelations(prev => [...prev, newRelation]);
@@ -745,7 +802,60 @@ const RelationsForm = ({relations, setRelations, characters, relationsDivRef}: R
             <div id="relations" ref={relationsDivRef}>
                 {relations.map((relation: RelationInterface, i: number) => (
                     <div className="w-full border-gray-300 rounded-lg border-2 mt-8 pb-8">
-                        <div className="flex justify-end mt-4 mr-4">
+                        <div className="flex justify-between mt-4 mx-4">
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                strokeWidth="1.5"
+                                stroke="currentColor"
+                                className="size-6 cursor-pointer"
+                                onClick={() => {
+                                    const relationCharOne = relation.characterOne as CharacterInterface;
+                                    const relationCharTwo = relation.characterTwo as CharacterInterface;
+
+                                    const characterOne = {
+                                        firstName: relationCharOne.firstName,
+                                        middleNames: relationCharOne.middleNames,
+                                        lastName: relationCharOne.lastName,
+                                        nickname: relationCharOne.nickname,
+                                        gender: relationCharOne.gender,
+                                        pronouns: relationCharOne.pronouns,
+                                        race: relationCharOne.race,
+                                        age: relationCharOne.age,
+                                        image: relationCharOne.image,
+                                        imageBase64: relationCharOne.imageBase64,
+                                        uuid: relationCharOne.uuid,
+                                        userFields: relationCharOne.userFields
+                                    }
+                                    const characterTwo = {
+                                        firstName: relationCharTwo.firstName,
+                                        middleNames: relationCharTwo.middleNames,
+                                        lastName: relationCharTwo.lastName,
+                                        nickname: relationCharTwo.nickname,
+                                        gender: relationCharTwo.gender,
+                                        pronouns: relationCharTwo.pronouns,
+                                        race: relationCharTwo.race,
+                                        age: relationCharTwo.age,
+                                        image: relationCharTwo.image,
+                                        imageBase64: relationCharTwo.imageBase64,
+                                        uuid: relationCharTwo.uuid,
+                                        userFields: relationCharTwo.userFields
+                                    }
+
+                                    const newRelation = {
+                                        characterOne: characterOne,
+                                        characterTwo: characterTwo,
+                                        label: relation.label,
+                                        uuid: createUniqueId()
+                                    };
+            
+                                    setRelations(prev => [...prev, newRelation]);
+                                }}
+                            >
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125h-9.75a1.125 1.125 0 0 1-1.125-1.125V7.875c0-.621.504-1.125 1.125-1.125H6.75a9.06 9.06 0 0 1 1.5.124m7.5 10.376h3.375c.621 0 1.125-.504 1.125-1.125V11.25c0-4.46-3.243-8.161-7.5-8.876a9.06 9.06 0 0 0-1.5-.124H9.375c-.621 0-1.125.504-1.125 1.125v3.5m7.5 10.375H9.375a1.125 1.125 0 0 1-1.125-1.125v-9.25m12 6.625v-1.875a3.375 3.375 0 0 0-3.375-3.375h-1.5a1.125 1.125 0 0 1-1.125-1.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H9.75" />
+                            </svg>
+
                             <svg
                                 xmlns="http://www.w3.org/2000/svg"
                                 fill="none"
@@ -761,8 +871,20 @@ const RelationsForm = ({relations, setRelations, characters, relationsDivRef}: R
                         <div id="relationForm" className="w-[75%] mx-auto">
                             <div className="max-w-2xl mt-2">
                                 <div className="flex items-center justify-between p-6 bg-white">
+                                {relation.characterOne && relation.characterOne.image && relation.characterOne.imageBase64 ? (
+                                    <div className="w-24 ml-2 h-24 rounded-full flex overflow-hidden">
+                                        <img src={relation.characterOne.imageBase64} className="w-full h-full object-cover" />
+                                    </div>
+                                ) : (
                                     <div className="w-24 ml-2 h-24 rounded-full flex bg-gray-400" />
-                                    <div className="w-24 mr-2 h-24 rounded-full flex bg-gray-400" />
+                                )}
+                                {relation.characterTwo && relation.characterTwo.image && relation.characterTwo.imageBase64 ? (
+                                    <div className="w-24 ml-2 h-24 rounded-full flex overflow-hidden">
+                                        <img src={relation.characterTwo.imageBase64} className="w-full h-full object-cover" />
+                                    </div>
+                                ) : (
+                                    <div className="w-24 ml-2 h-24 rounded-full flex bg-gray-400" />
+                                )}
                                 </div>
                                 <div className="flex justify-between">
                                     <select
@@ -774,19 +896,31 @@ const RelationsForm = ({relations, setRelations, characters, relationsDivRef}: R
                                             const target = e.target as HTMLSelectElement;
 
                                             const character = characters.find(char => char.uuid === target.value);
+                                            const newCharacter = {
+                                                firstName: "",
+                                                middleNames: "",
+                                                lastName: "",
+                                                nickname: "",
+                                                gender: "",
+                                                pronouns: "",
+                                                race: "",
+                                                age: "",
+                                                image: null,
+                                                imageBase64: "",
+                                                uuid: "",
+                                                userFields: []
+                                            };
 
-                                            if(character) {
-                                                setRelations(prev => {
-                                                    const newRelations = [...prev];
+                                            setRelations(prev => {
+                                                const newRelations = [...prev];
 
-                                                    newRelations[i] = {
-                                                        ...newRelations[i],
-                                                        characterOne: character
-                                                    };
+                                                newRelations[i] = {
+                                                    ...newRelations[i],
+                                                    characterOne: character ?? newCharacter
+                                                };
 
-                                                    return newRelations;
-                                                })
-                                            }
+                                                return newRelations;
+                                            })
                                         }}
                                     >
                                         <option />
@@ -827,19 +961,31 @@ const RelationsForm = ({relations, setRelations, characters, relationsDivRef}: R
                                             const target = e.target as HTMLSelectElement;
 
                                             const character = characters.find(char => char.uuid === target.value);
+                                            const newCharacter = {
+                                                firstName: "",
+                                                middleNames: "",
+                                                lastName: "",
+                                                nickname: "",
+                                                gender: "",
+                                                pronouns: "",
+                                                race: "",
+                                                age: "",
+                                                image: null,
+                                                imageBase64: "",
+                                                uuid: "",
+                                                userFields: []
+                                            };
 
-                                            if(character) {
-                                                setRelations(prev => {
-                                                    const newRelations = [...prev];
+                                            setRelations(prev => {
+                                                const newRelations = [...prev];
 
-                                                    newRelations[i] = {
-                                                        ...newRelations[i],
-                                                        characterTwo: character
-                                                    };
+                                                newRelations[i] = {
+                                                    ...newRelations[i],
+                                                    characterTwo: character ?? newCharacter
+                                                };
 
-                                                    return newRelations;
-                                                })
-                                            }
+                                                return newRelations;
+                                            })
                                         }}
                                     >
                                         <option />
@@ -1227,12 +1373,6 @@ const CreateBook = () => {
         locations: locations
     };
 
-    // useEffect(() => {
-    //     if(cover) {
-    //         blobToDataURL(cover, (dataUri: string) => console.log(dataUri))
-    //     }
-    // }, [cover])
-
     return (
         <>
             <Navbar />
@@ -1285,7 +1425,7 @@ const CreateBook = () => {
                             />
                         </div>
                         <div className={activeScreen !== "characters" ? "hidden" : ""}>
-                            <CharactersForm characters={characters} setCharacters={setCharacters} charactersDivRef={charactersDivRef} characterFormRef={characterFormRef} />
+                            <CharactersForm characters={characters} setCharacters={setCharacters} relations={relations} setRelations={setRelations} charactersDivRef={charactersDivRef} characterFormRef={characterFormRef} />
                         </div>
                         <div className={activeScreen !== "relations" ? "hidden" : ""}>
                             <RelationsForm relations={relations} setRelations={setRelations} characters={characters} relationsDivRef={relationsDivRef} />
@@ -1293,9 +1433,14 @@ const CreateBook = () => {
                         <div className={activeScreen !== "locations" ? "hidden" : ""}>
                             <LocationsForm locations={locations} setLocations={setLocations} locationsDivRef={locationsDivRef} locationFormRef={locationFormRef} />
                         </div>
-                        {((activeScreen === "book") || (activeScreen === "characters" && characters.length > 0) || (activeScreen === "relations" && relations.length > 0) || (activeScreen === "locations" && locations.length > 0)) && (
+                        {(
+                            (activeScreen === "book")
+                            || (activeScreen === "characters" && characters.length > 0)
+                            || (activeScreen === "relations" && relations.length > 0)
+                            || (activeScreen === "locations" && locations.length > 0)
+                        ) && (
                             <div className="text-right mt-16 mb-4">
-                                <button className="px-4 py-2 rounded-lg bg-blue-600 text-white font-semibold hover:bg-blue-800 hover:cursor-pointer active:bg-blue-900 shadow-xl">Créer</button>
+                                <button className="px-4 py-2 rounded-lg bg-blue-600 text-white font-semibold hover:bg-blue-800 hover:cursor-pointer active:bg-blue-900 shadow-xl disabled:bg-blue-900 disabled:cursor-not-allowed" disabled={(activeScreen === "relations" && relations.length > 0 && relations.find(rel => rel.characterOne.uuid == "" || rel.characterTwo.uuid == "")) as boolean}>Créer</button>
                             </div>
                         )}
                     </div>

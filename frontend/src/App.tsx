@@ -20,7 +20,6 @@ const App = () => {
     }
 
     if(routesTitle.hasOwnProperty(url)) {
-      console.log('yippee')
       return `${baseTitle}${routesTitle[url]}`;
     }
 
