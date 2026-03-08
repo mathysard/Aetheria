@@ -2,9 +2,9 @@ const Navbar = () => {
     const isAuthenticated = localStorage.getItem('auth_token') ?? false;
 
     return (
-        <nav className="bg-white w-full z-20 border-b border-gray-400">
+        <nav className="bg-white w-full z-20 border-b border-gray-400" id="navbar">
             <div className="flex items-center justify-between p-4">
-                <img src="../../public/logo.png" className="h-9" alt="Flowbite Logo" />
+                <img src={`${window.location.origin}/public/logo.png`} className="h-9" />
                 {window.location.href === "/" && (
                     <div className="flex items-center pl-2 rounded-2xl border-gray-300 border-2">
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="oklch(55.1% 0.027 264.364)" className="size-6">

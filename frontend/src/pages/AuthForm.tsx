@@ -136,20 +136,22 @@ const AuthForm = () => {
 
                         <div className="mt-4 mx-auto w-full max-w-sm">
                             <form action="#" method="POST" className="space-y-6">
-                                <div>
-                                    <div className="flex items-center justify-between">
-                                        <label htmlFor="displayName" className="font-semibold text-base">Nom</label>
+                                {authState === "register" && (
+                                    <div>
+                                        <div className="flex items-center justify-between">
+                                            <label htmlFor="displayName" className="font-semibold text-base">Nom</label>
+                                        </div>
+                                        <div className="mt-2">
+                                            <input
+                                                id="displayName"
+                                                type="text"
+                                                name="displayName"
+                                                required
+                                                className="bg-neutral-secondary-medium border-2 border-gray-400 text-heading text-sm rounded-lg focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs placeholder:text-body" placeholder="Nom..."
+                                            />
+                                        </div>
                                     </div>
-                                    <div className="mt-2">
-                                        <input
-                                            id="displayName"
-                                            type="text"
-                                            name="displayName"
-                                            required
-                                            className="bg-neutral-secondary-medium border-2 border-gray-400 text-heading text-sm rounded-lg focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs placeholder:text-body" placeholder="Nom..."
-                                        />
-                                    </div>
-                                </div>
+                                )}
 
                                 <div>
                                     <div className="flex items-center justify-between">

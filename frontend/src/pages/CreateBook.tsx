@@ -307,6 +307,10 @@ const CharacterCard = ({character, dialogRef, setChosenCharacter, setCharacters,
                 <button
                     className="inline-flex items-center text-white bg-blue-500 box-border border border-transparent hover:bg-brand-strong focus:ring-4 focus:ring-brand-medium shadow-xs font-medium leading-5 rounded-base text-sm px-4 py-2.5 cursor-pointer hover:bg-blue-600 active:bg-blue-700"
                     onClick={() => {
+                        const navbar = document.getElementById("navbar") as HTMLDivElement;
+                        navbar.scrollIntoView({
+                            behavior: 'smooth'
+                        });
                         setChosenCharacter(character);
                         dialogRef.current?.showModal();
                     }}
@@ -391,7 +395,7 @@ const CharactersForm = ({characters, setCharacters, setRelations, charactersDivR
                 </div>
             </div>
 
-            <dialog ref={dialogRef} className="w-[60%] mx-auto absolute top-16 backdrop:bg-gray-600 backdrop:opacity-50">
+            <dialog ref={dialogRef} className="w-[60%] mx-auto absolute top-5 backdrop:bg-gray-600 backdrop:opacity-50">
                 <div className="w-full mt-8 bg-white">
                     <div className="flex justify-between mx-4">
                         <svg
@@ -448,36 +452,6 @@ const CharactersForm = ({characters, setCharacters, setRelations, charactersDivR
                     <div className="pb-18" />
 
                     <div id="characterForm" ref={characterFormRef} className="w-[75%] mx-auto">
-                        <div className="flex justify-between mb-6">
-                            <input type="text" placeholder="Nom du champ..." className="bg-neutral-secondary-medium border-2 border-gray-400 text-heading text-sm rounded-lg focus:ring-brand focus:border-brand block w-[75%] px-3 py-2.5 shadow-xs placeholder:text-body" />
-                            <button
-                                className="px-4 py-2 rounded-lg bg-blue-600 text-white font-semibold hover:bg-blue-800 hover:cursor-pointer active:bg-blue-900 shadow-xl"
-                                onClick={(e) => {
-                                    const target = e.target as HTMLButtonElement;
-                                    const inputElement = target.parentElement?.children[0] as HTMLInputElement;
-
-                                    if(inputElement.value.length > 0) {
-                                        setCharacters(prev => {
-                                            const newUserField = [...prev];
-                                            const foundCharacter = newUserField.find((val) => val.uuid == chosenCharacter?.uuid);
-                                            foundCharacter?.userFields?.push({
-                                                label: inputElement.value,
-                                                value: "",
-                                                uuid: createUniqueId()
-                                            });
-
-                                            inputElement.value = "";
-                                            
-                                            return newUserField;
-                                        });
-                                    }
-
-                                    inputElement.focus();
-                                }}
-                            >
-                                + Champ
-                            </button>
-                        </div>
                         <div className="mb-6">
                             <label className="font-semibold text-base">Prénom</label>
                             <div className="my-1.5" />
@@ -692,7 +666,7 @@ const CharactersForm = ({characters, setCharacters, setRelations, charactersDivR
                                     id={`characterUserField_${fieldI+1}`}
                                     name={`userField_${fieldI+1}`}
                                     className="bg-neutral-secondary-medium border-2 border-gray-400 text-heading text-sm rounded-lg focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs placeholder:text-body"
-                                    placeholder="Âge..."
+                                    placeholder={`${field.label}...`}
                                     value={field.value ?? undefined}
                                     onInput={(e) => {
                                         const target = e.target as HTMLInputElement;
@@ -709,6 +683,37 @@ const CharactersForm = ({characters, setCharacters, setRelations, charactersDivR
                                 />
                             </div>
                         ))}
+                        <div className="bg-gray-400 w-full h-0.5 mt-2 mb-8" />
+                        <div className="flex justify-between mb-6">
+                            <input type="text" placeholder="Nom du champ..." className="bg-neutral-secondary-medium border-2 border-gray-400 text-heading text-sm rounded-lg focus:ring-brand focus:border-brand block w-[75%] px-3 py-2.5 shadow-xs placeholder:text-body" />
+                            <button
+                                className="px-4 py-2 rounded-lg bg-blue-600 text-white font-semibold hover:bg-blue-800 hover:cursor-pointer active:bg-blue-900 shadow-xl"
+                                onClick={(e) => {
+                                    const target = e.target as HTMLButtonElement;
+                                    const inputElement = target.parentElement?.children[0] as HTMLInputElement;
+
+                                    if(inputElement.value.length > 0) {
+                                        setCharacters(prev => {
+                                            const newUserField = [...prev];
+                                            const foundCharacter = newUserField.find((val) => val.uuid == chosenCharacter?.uuid);
+                                            foundCharacter?.userFields?.push({
+                                                label: inputElement.value,
+                                                value: "",
+                                                uuid: createUniqueId()
+                                            });
+
+                                            inputElement.value = "";
+                                            
+                                            return newUserField;
+                                        });
+                                    }
+
+                                    inputElement.focus();
+                                }}
+                            >
+                                + Champ
+                            </button>
+                        </div>
                     </div>
                 </div>
 
@@ -1038,6 +1043,10 @@ const LocationCard = ({location, dialogRef, setChosenLocation, setLocations}: Lo
                 <button
                     className="inline-flex items-center text-white bg-blue-500 box-border border border-transparent hover:bg-brand-strong focus:ring-4 focus:ring-brand-medium shadow-xs font-medium leading-5 rounded-base text-sm px-4 py-2.5 cursor-pointer hover:bg-blue-600 active:bg-blue-700"
                     onClick={() => {
+                        const navbar = document.getElementById("navbar") as HTMLDivElement;
+                        navbar.scrollIntoView({
+                            behavior: 'smooth'
+                        });
                         setChosenLocation(location);
                         dialogRef.current?.showModal();
                     }}
@@ -1116,7 +1125,7 @@ const LocationsForm = ({locations, setLocations, locationsDivRef, locationFormRe
                 </div>
             </div>
 
-            <dialog ref={dialogRef} className="w-[60%] mx-auto absolute top-16 backdrop:bg-gray-600 backdrop:opacity-50">
+            <dialog ref={dialogRef} className="w-[60%] mx-auto absolute top-5 backdrop:bg-gray-600 backdrop:opacity-50">
                 <div className="w-full mt-8 bg-white">
                     <div className="flex justify-between mx-4">
                         <svg
@@ -1172,36 +1181,6 @@ const LocationsForm = ({locations, setLocations, locationsDivRef, locationFormRe
                     <div className="pb-18" />
 
                     <div id="locationForm" ref={locationFormRef} className="w-[75%] mx-auto">
-                        <div className="flex justify-between mb-6">
-                            <input type="text" placeholder="Nom du champ..." className="bg-neutral-secondary-medium border-2 border-gray-400 text-heading text-sm rounded-lg focus:ring-brand focus:border-brand block w-[75%] px-3 py-2.5 shadow-xs placeholder:text-body" />
-                            <button
-                                className="px-4 py-2 rounded-lg bg-blue-600 text-white font-semibold hover:bg-blue-800 hover:cursor-pointer active:bg-blue-900 shadow-xl"
-                                onClick={(e) => {
-                                    const target = e.target as HTMLButtonElement;
-                                    const inputElement = target.parentElement?.children[0] as HTMLInputElement;
-
-                                    if(inputElement.value.length > 0) {
-                                        setLocations(prev => {
-                                            const newUserField = [...prev];
-                                            const foundLocation = newUserField.find((val) => val.uuid == chosenLocation?.uuid);
-                                            foundLocation?.userFields?.push({
-                                                label: inputElement.value,
-                                                value: "",
-                                                uuid: createUniqueId()
-                                            });
-
-                                            inputElement.value = "";
-                                            
-                                            return newUserField;
-                                        });
-                                    }
-
-                                    inputElement.focus();
-                                }}
-                            >
-                                + Champ
-                            </button>
-                        </div>
                         <div className="mb-6">
                             <label className="font-semibold text-base">Nom</label>
                             <div className="my-1.5" />
@@ -1278,7 +1257,7 @@ const LocationsForm = ({locations, setLocations, locationsDivRef, locationFormRe
                                     id={`locationUserField_${fieldI+1}`}
                                     name={`userField_${fieldI+1}`}
                                     className="bg-neutral-secondary-medium border-2 border-gray-400 text-heading text-sm rounded-lg focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs placeholder:text-body"
-                                    placeholder="Âge..."
+                                    placeholder={`${field.label}...`}
                                     value={field.value ?? undefined}
                                     onInput={(e) => {
                                         const target = e.target as HTMLInputElement;
@@ -1295,6 +1274,37 @@ const LocationsForm = ({locations, setLocations, locationsDivRef, locationFormRe
                                 />
                             </div>
                         ))}
+                        <div className="bg-gray-400 w-full h-0.5 mt-2 mb-8" />
+                        <div className="flex justify-between mb-6">
+                            <input type="text" placeholder="Nom du champ..." className="bg-neutral-secondary-medium border-2 border-gray-400 text-heading text-sm rounded-lg focus:ring-brand focus:border-brand block w-[75%] px-3 py-2.5 shadow-xs placeholder:text-body" />
+                            <button
+                                className="px-4 py-2 rounded-lg bg-blue-600 text-white font-semibold hover:bg-blue-800 hover:cursor-pointer active:bg-blue-900 shadow-xl"
+                                onClick={(e) => {
+                                    const target = e.target as HTMLButtonElement;
+                                    const inputElement = target.parentElement?.children[0] as HTMLInputElement;
+
+                                    if(inputElement.value.length > 0) {
+                                        setLocations(prev => {
+                                            const newUserField = [...prev];
+                                            const foundLocation = newUserField.find((val) => val.uuid == chosenLocation?.uuid);
+                                            foundLocation?.userFields?.push({
+                                                label: inputElement.value,
+                                                value: "",
+                                                uuid: createUniqueId()
+                                            });
+
+                                            inputElement.value = "";
+                                            
+                                            return newUserField;
+                                        });
+                                    }
+
+                                    inputElement.focus();
+                                }}
+                            >
+                                + Champ
+                            </button>
+                        </div>
                     </div>
                 </div>
 
