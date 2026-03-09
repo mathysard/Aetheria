@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState, type Ref, type RefObject } from 'react'
 import Navbar from "../components/Navbar"
-import { dataURIToBlob } from '../utils';
+import { dataURIToBlob, createUniqueId } from '../utils';
 
 interface CharacterInterface {
     firstName: string;
@@ -77,26 +77,6 @@ interface LocationFormInterface {
     setLocations: React.Dispatch<React.SetStateAction<LocationInterface[]>>,
     locationsDivRef: Ref<HTMLDivElement>|undefined|null,
     locationFormRef: Ref<HTMLDivElement>|undefined|null,
-}
-
-const createUniqueId = () => {
-    const allowedChars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_@#".split("");
-    const charsLength = allowedChars.length;
-    let id = "";
-
-    for(let i = 0; i < 25; i++) {
-        let char = allowedChars[Math.round((Math.random() * charsLength) - 1)];
-
-        if(char == undefined) {
-            while(char == undefined) {
-                char = allowedChars[Math.round((Math.random() * charsLength) - 1)];
-            }
-        }
-
-        id += char;
-    }
-
-    return id;
 }
 
 interface BookFormInterface {

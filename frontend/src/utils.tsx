@@ -16,3 +16,25 @@ export const blobToDataURL = (blob: Blob, callback: (dataUrl: string) => void) =
     a.onload = function(e) {callback(e.target?.result as string);}
     a.readAsDataURL(blob);
 }
+
+export const isNumber = (number: any) => parseInt(number) == number;
+
+export const createUniqueId = () => {
+    const allowedChars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_@#".split("");
+    const charsLength = allowedChars.length;
+    let id = "";
+
+    for(let i = 0; i < 25; i++) {
+        let char = allowedChars[Math.round((Math.random() * charsLength) - 1)];
+
+        if(char == undefined) {
+            while(char == undefined) {
+                char = allowedChars[Math.round((Math.random() * charsLength) - 1)];
+            }
+        }
+
+        id += char;
+    }
+
+    return id;
+}
