@@ -67,7 +67,7 @@ const App = () => {
                 <Route path="/login" element={<AuthForm />} />
                 <Route path="/register" element={<AuthForm />} />
                 <Route path="/book/create" element={<CreateBook />} />
-                <Route path="/book/:id/chapter/create" element={<CreateChapter />} />
+                <Route path="/book/:bookId/chapter/create" element={<CreateChapter />} />
             </Routes>
             </Router>
         </>
