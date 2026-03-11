@@ -3,6 +3,7 @@ import Navbar from '../components/Navbar'
 import { useParams } from 'react-router-dom'
 import { isNumber } from '../utils';
 import Error from '../classes/Error';
+import MarkdownEditor from '../components/MarkdownEditor';
 
 const CreateChapter = () => {
   const error = new Error();
@@ -35,9 +36,10 @@ const CreateChapter = () => {
                 <button className="px-4 py-2 rounded-lg bg-white text-black font-semibold hover:bg-stone-200 hover:cursor-pointer active:bg-stone-300 shadow-xl border h-fit">Annuler</button>
             </div>
         </div>
-        <div className="mt-4 mx-4">
-            <div>
+        <div className="flex justify-between m-4">
+            <div className="w-[48%]">
                 <label className="font-semibold text-base">Titre ({chapterTitle.length}/255)</label>
+                <div className="my-1 5" />
                 <input
                     type="text"
                     id="chapterTitle"
@@ -56,8 +58,9 @@ const CreateChapter = () => {
             </div>
             <div className="mb-4" />
 
-            <div>
+            <div className="w-[48%]">
                 <label className="font-semibold text-base">Résumé ({chapterSummary.length}/500)</label>
+                <div className="my-1 5" />
                 <textarea
                     id="chapterSummary"
                     name="title"
@@ -74,6 +77,8 @@ const CreateChapter = () => {
                 />
             </div>
         </div>
+
+        <MarkdownEditor />
     </>
   )
 }
