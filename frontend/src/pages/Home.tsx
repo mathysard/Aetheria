@@ -5,7 +5,9 @@ import UserCard from "../components/home/UserCard";
 const Home = () => {
     return (
         <>
-            <Navbar />
+            <div className="sticky top-0">
+                <Navbar />
+            </div>
             <div className="mt-8 mb-8 ml-8">
                 <p className="text-3xl font-semibold">Vos lectures</p>
                 <div className="flex gap-12 pt-4">

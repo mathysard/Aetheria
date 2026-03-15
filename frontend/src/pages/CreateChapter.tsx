@@ -17,23 +17,27 @@ const CreateChapter = () => {
 
   const [chapterTitle, setChapterTitle] = useState("");
   const [chapterSummary, setChapterSummary] = useState("");
+  const [chapterWordsCount, setChapterWordsCount] = useState(0);
+  const [chapterText, setChapterText] = useState("");
 
   return (
     <>
-        <Navbar />
-        <div className="flex justify-between px-4 py-4 bg-white sticky border-b border-b-gray-700">
-            <div className="flex">
-                <div className="w-10 h-20 overflow-hidden">
-                    <img src="https://d1csarkz8obe9u.cloudfront.net/posterpreviews/contemporary-fiction-night-time-book-cover-design-template-1be47835c3058eb42211574e0c4ed8bf_screen.jpg?ts=1734004864" className="w-full h-full" />
+        <div className="sticky top-0">
+            <Navbar />
+            <div className="flex justify-between px-4 py-4 bg-white sticky border-b border-b-gray-700">
+                <div className="flex">
+                    <div className="w-10 h-20 overflow-hidden">
+                        <img src="https://d1csarkz8obe9u.cloudfront.net/posterpreviews/contemporary-fiction-night-time-book-cover-design-template-1be47835c3058eb42211574e0c4ed8bf_screen.jpg?ts=1734004864" className="w-full h-full" />
+                    </div>
+                    <div className="ml-4">
+                        <p className="text-lg font-semibold">The Imperfections of Memory</p>
+                        <p className="text-gray-500">{chapterWordsCount} {chapterWordsCount < 2 ? "mot" : "mots"}</p>
+                    </div>
                 </div>
-                <div className="ml-4">
-                    <p className="text-lg font-semibold">The Imperfections of Memory</p>
-                    <p className="text-gray-500">817 mots</p>
+                <div className="flex items-center gap-2">
+                    <button className="px-4 py-2 rounded-lg bg-blue-600 text-white font-semibold hover:bg-blue-800 hover:cursor-pointer active:bg-blue-900 shadow-xl h-fit">Créer</button>
+                    <button className="px-4 py-2 rounded-lg bg-white text-black font-semibold hover:bg-stone-200 hover:cursor-pointer active:bg-stone-300 shadow-xl border h-fit">Annuler</button>
                 </div>
-            </div>
-            <div className="flex items-center gap-2">
-                <button className="px-4 py-2 rounded-lg bg-blue-600 text-white font-semibold hover:bg-blue-800 hover:cursor-pointer active:bg-blue-900 shadow-xl h-fit">Créer</button>
-                <button className="px-4 py-2 rounded-lg bg-white text-black font-semibold hover:bg-stone-200 hover:cursor-pointer active:bg-stone-300 shadow-xl border h-fit">Annuler</button>
             </div>
         </div>
         <div className="flex justify-between m-4">
@@ -78,7 +82,7 @@ const CreateChapter = () => {
             </div>
         </div>
 
-        <MarkdownEditor />
+        <MarkdownEditor chapterText={chapterText} setChapterText={setChapterText} setChapterWordsCount={setChapterWordsCount} />
     </>
   )
 }
