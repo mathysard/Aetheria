@@ -1365,7 +1365,9 @@ const CreateBook = () => {
 
     return (
         <>
-            <Navbar />
+            <div className="sticky top-0">
+                <Navbar />
+            </div>
             <div className="mt-16 ml-24">
                 <div className="flex">
                     <div className="bg-gray-400 w-[20%] h-120 hover:bg-gray-500 cursor-pointer active:bg-gray-600">
