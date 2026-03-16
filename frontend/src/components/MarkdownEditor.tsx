@@ -1,4 +1,4 @@
-import React, { useState, useRef, type ChangeEvent } from 'react';
+import React, { useRef, type ChangeEvent } from 'react';
 
 interface PropsInterface {
     chapterText: string;

@@ -7,40 +7,47 @@ import CreateChapter from './pages/CreateChapter';
 import Error from './classes/Error';
 import Toast from './components/Toast';
 import { useEffect, useState } from 'react';
+import UserPage from './pages/UserPage';
 
 interface RoutesTitleInterface {
   [key: string]: string;
 }
 
 const App = () => {
-    const setTitle = () => {
+    const error = new Error();
+
+    const [errors, setErrors] = useState(error.exists() ? error.getAll() : []);
+
+    useEffect(() => {
         const url = window.location.pathname;
         const baseTitle = "Aetheria";
         const routesTitle: RoutesTitleInterface = {
-            "/": "",
-            "/book/create": " — Créer un livre",
-            "/login": " — Connexion",
-            "/register": " — Inscription"
+            "/": "Page d'accueil",
+            "/book/create": "Créer un livre",
+            "/login": "Connexion",
+            "/register": "Inscription",
+            "/user/me": "Mon profil"
         }
 
         if(routesTitle.hasOwnProperty(url)) {
-            return `${baseTitle}${routesTitle[url]}`;
+            document.title = `${baseTitle} — ${routesTitle[url]}`;
         }
 
         // /book/{id}/update
         if(/^\/book\/\d+\/update$/.test(url)) {
-            return `${baseTitle} — Modifier un livre`;
+            document.title = `${baseTitle} — Modifier un livre`;
         }
 
         // /book/{id}/chapter/create
         if(/^\/book\/\d+\/chapter\/create$/.test(url)) {
-            return `${baseTitle} — Créer un chapitre`;
+            document.title = `${baseTitle} — Créer un chapitre`;
         }
-    }
 
-    const error = new Error();
-
-    const [errors, setErrors] = useState(error.exists() ? error.getAll() : []);
+        // /user/{id}
+        if(/^\/user\/\d+$/.test(url)) {
+            document.title = `${baseTitle} — Utilisateur`;
+        }
+    }, []);
 
     useEffect(() => {
         if(errors) {
@@ -54,13 +61,13 @@ const App = () => {
     return (
         <>
             {errors && errors.length > 0 && (
-                <div className="absolute top-8 right-8">
+                <div className="absolute top-20 right-8">
                     {errors.map((error: string) => (
                         <Toast state="error" text={error} />
                     ))}
                 </div>
             )}
-            <title>{setTitle()}</title>
+            
             <Router>
             <Routes>
                 <Route path="/" element={<Home />} />
@@ -68,6 +75,7 @@ const App = () => {
                 <Route path="/register" element={<AuthForm />} />
                 <Route path="/book/create" element={<CreateBook />} />
                 <Route path="/book/:bookId/chapter/create" element={<CreateChapter />} />
+                <Route path="/user/:userId" element={<UserPage />} />
             </Routes>
             </Router>
         </>

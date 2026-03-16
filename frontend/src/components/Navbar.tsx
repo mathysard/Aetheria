@@ -1,5 +1,19 @@
+import { useState } from "react";
+
 const Navbar = () => {
-    const isAuthenticated = localStorage.getItem('auth_token') ?? false;
+    const isAuthenticated = localStorage.getItem('auth_token') ?? true;
+    const [dropdownDegree, setDropdownDegree] = useState(0);
+    const [language, setLanguage] = useState(localStorage.getItem('language') ?? navigator.language.split('-')[0]);
+
+    {/*
+        - Profil
+        - Écrire
+        - Notifications
+        - Langue
+            - Français
+        - Paramètres
+        - Déconnexion
+    */}
 
     return (
         <nav className="bg-white w-full z-20 border-b border-gray-400" id="navbar">
@@ -16,11 +30,11 @@ const Navbar = () => {
                     )}
                 </a>
                 {isAuthenticated ? (
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 cursor-pointer outline-none" onClick={() => setDropdownDegree(prev => prev === 0 ? 180 : 0)}>
                         <div className="w-8 h-8 rounded-full overflow-hidden">
-                            <img src="https://images-ext-1.discordapp.net/external/pHp4FyubJ24K_VHSfZqUjlh9YiVPtx48Hw1StKzKNgw/https/cdn.pluralkit.me/images/hv/fwvag5xr5citmuxefbua47qe.webp?format=webp" className="w-full h-full object-cover" />
+                            <img src="https://i.redd.it/who-would-win-the-battle-featherine-or-beerus-v0-vlworqtsfu2f1.jpg?width=736&format=pjpg&auto=webp&s=519d8bd77b05e2caadb57322aba18853d59c4198" className="w-full h-full object-cover" />
                         </div>
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="size-6 cursor-pointer">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className={`size-6 cursor-pointer rotate-${dropdownDegree}`}>
                             <path strokeLinecap="round" strokeLinejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
                         </svg>
                     </div>
