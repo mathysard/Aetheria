@@ -1,23 +1,19 @@
 import './App.css'
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { useEffect } from 'react';
 import Home from './pages/Home';
 import CreateBook from './pages/CreateBook';
 import AuthForm from './pages/AuthForm';
 import CreateChapter from './pages/CreateChapter';
-import Error from './classes/Error';
-import Toast from './components/Toast';
-import { useEffect, useState } from 'react';
 import UserPage from './pages/UserPage';
+import ReadChapter from './pages/ReadChapter';
+import GenericData from './pages/GenericData';
 
 interface RoutesTitleInterface {
   [key: string]: string;
 }
 
 const App = () => {
-    const error = new Error();
-
-    const [errors, setErrors] = useState(error.exists() ? error.getAll() : []);
-
     useEffect(() => {
         const url = window.location.pathname;
         const baseTitle = "Aetheria";
@@ -26,7 +22,8 @@ const App = () => {
             "/book/create": "Créer un livre",
             "/login": "Connexion",
             "/register": "Inscription",
-            "/user/me": "Mon profil"
+            "/user/me": "Mon profil",
+            "/data/generic": "Données génériques"
         }
 
         if(routesTitle.hasOwnProperty(url)) {
@@ -47,35 +44,33 @@ const App = () => {
         if(/^\/user\/\d+$/.test(url)) {
             document.title = `${baseTitle} — Utilisateur`;
         }
-    }, []);
 
-    useEffect(() => {
-        if(errors) {
-            setTimeout(() => {
-                error.clear();
-                setErrors([]);
-            }, 5000)
+        // /chapter/{id}
+        if(/^\/chapter\/\d+$/.test(url)) {
+            document.title = `${baseTitle} — Chapitre`;
         }
-    }, [errors]);
+    }, []);
 
     return (
         <>
-            {errors && errors.length > 0 && (
+            {/* {errors && errors.length > 0 && (
                 <div className="absolute top-20 right-8">
                     {errors.map((error: string) => (
                         <Toast state="error" text={error} />
                     ))}
                 </div>
-            )}
+            )} */}
             
             <Router>
             <Routes>
                 <Route path="/" element={<Home />} />
                 <Route path="/login" element={<AuthForm />} />
                 <Route path="/register" element={<AuthForm />} />
-                <Route path="/book/create" element={<CreateBook />} />
-                <Route path="/book/:bookId/chapter/create" element={<CreateChapter />} />
                 <Route path="/user/:userId" element={<UserPage />} />
+                <Route path="/book/create" element={<CreateBook />} />
+                <Route path="/generic/data" element={<GenericData />} />
+                <Route path="/chapter/:chapterId" element={<ReadChapter />} />
+                <Route path="/book/:bookId/chapter/create" element={<CreateChapter />} />
             </Routes>
             </Router>
         </>

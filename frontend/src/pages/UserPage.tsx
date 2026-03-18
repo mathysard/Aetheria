@@ -2,7 +2,6 @@ import { useState } from "react";
 import Navbar from '../components/Navbar'
 import { useParams } from 'react-router-dom'
 import { isNumber } from '../utils';
-import Error from '../classes/Error';
 
 interface BookThumbnailInterface {
     formatter: Intl.NumberFormat;
@@ -51,13 +50,10 @@ const BookThumbnail = ({ formatter, title, cover, views, likes, description }: B
 }
 
 export default function UserPage() {
-    const error = new Error();
     const { userId } = useParams();
 
     if (userId !== "me") {
         if (!isNumber(userId)) {
-            error.set("L'id de l'utilisateur doit être un nombre.");
-
             window.location.href = "/";
         }
     }

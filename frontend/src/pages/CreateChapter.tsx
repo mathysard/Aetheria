@@ -2,16 +2,12 @@ import { useState } from 'react'
 import Navbar from '../components/Navbar'
 import { useParams } from 'react-router-dom'
 import { isNumber } from '../utils';
-import Error from '../classes/Error';
 import MarkdownEditor from '../components/MarkdownEditor';
 
 const CreateChapter = () => {
-  const error = new Error();
   const { bookId } = useParams();
 
   if(!isNumber(bookId)) {
-    error.set("L'id du livre doit être un nombre.");
-
     window.location.href = "/";
   }
 
