@@ -3,12 +3,13 @@ import Navbar from '../components/Navbar'
 import { useParams } from 'react-router-dom'
 import { isNumber } from '../utils';
 import MarkdownEditor from '../components/MarkdownEditor';
+import Toast from '../components/Toast';
 
 const CreateChapter = () => {
   const { bookId } = useParams();
 
   if(!isNumber(bookId)) {
-    window.location.href = "/";
+    return <Toast state="error" text="L'id du livre doit être un nombre." />
   }
 
   const [chapterTitle, setChapterTitle] = useState("");

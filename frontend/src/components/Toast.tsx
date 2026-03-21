@@ -1,3 +1,5 @@
+import { useState, useEffect } from "react";
+
 interface PropsInterface {
     state: "success"|"error"|"warning"|"info";
     text: string;
@@ -51,8 +53,16 @@ function Toast({state, text}: PropsInterface) {
         )
     }
 
+    const [visible, setVisible] = useState(false);
+
+    useEffect(() => {
+        setVisible(true);
+        const timer = setTimeout(() => setVisible(false), 5000);
+        return () => clearTimeout(timer);
+    }, []);
+
     return (
-        <div style={{ backgroundColor: toastBg[state] }} className="bg-red-200 px-6 py-4 mx-2 my-4 rounded-md text-lg flex items-center mx-auto max-w-lg">
+        <div style={{ backgroundColor: toastBg[state] }} className={`bg-red-200 px-6 py-4 my-4 rounded-md text-lg flex items-center mx-auto max-w-lg transition-all duration-300 ease-in-out ${visible ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-5"}`}>
             {toastSvg[state]}
             <span style={{ color: toastTextColor[state] }}>{text}</span>
         </div>

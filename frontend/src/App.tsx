@@ -8,6 +8,8 @@ import CreateChapter from './pages/CreateChapter';
 import UserPage from './pages/UserPage';
 import ReadChapter from './pages/ReadChapter';
 import GenericData from './pages/GenericData';
+import UpdateUser from './pages/UpdateUser';
+import SearchPage from './pages/SearchPage';
 
 interface RoutesTitleInterface {
   [key: string]: string;
@@ -49,6 +51,11 @@ const App = () => {
         if(/^\/chapter\/\d+$/.test(url)) {
             document.title = `${baseTitle} — Chapitre`;
         }
+
+        // /search/{userSearch}
+        if(/^\/search\/.*$/.test(url)) {
+            document.title = `${baseTitle} — Recherche`;
+        }
     }, []);
 
     return (
@@ -63,14 +70,55 @@ const App = () => {
             
             <Router>
             <Routes>
-                <Route path="/" element={<Home />} />
-                <Route path="/login" element={<AuthForm />} />
-                <Route path="/register" element={<AuthForm />} />
-                <Route path="/user/:userId" element={<UserPage />} />
-                <Route path="/book/create" element={<CreateBook />} />
-                <Route path="/generic/data" element={<GenericData />} />
-                <Route path="/chapter/:chapterId" element={<ReadChapter />} />
-                <Route path="/book/:bookId/chapter/create" element={<CreateChapter />} />
+                <Route
+                    path="/"
+                    element={<Home />}
+                />
+
+                <Route
+                    path="/login"
+                    element={<AuthForm />}
+                />
+
+                <Route
+                    path="/register"
+                    element={<AuthForm />}
+                />
+
+                <Route
+                    path="/user/:userId"
+                    element={<UserPage />}
+                />
+
+                <Route
+                    path="/book/create"
+                    element={<CreateBook />}
+                />
+
+                <Route
+                    path="/generic/data"
+                    element={<GenericData />}
+                />
+
+                <Route
+                    path="/user/:userId/update"
+                    element={<UpdateUser />}
+                />
+
+                <Route
+                    path="/chapter/:chapterId"
+                    element={<ReadChapter />}
+                />
+
+                <Route
+                    path="/book/:bookId/chapter/create"
+                    element={<CreateChapter />}
+                />
+
+                <Route
+                    path="/search/:userSearch"
+                    element={<SearchPage />}
+                />
             </Routes>
             </Router>
         </>

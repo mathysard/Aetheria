@@ -2,6 +2,7 @@ import { useState } from "react";
 import Navbar from '../components/Navbar'
 import { useParams } from 'react-router-dom'
 import { isNumber } from '../utils';
+import Toast from "../components/Toast";
 
 interface BookThumbnailInterface {
     formatter: Intl.NumberFormat;
@@ -54,7 +55,7 @@ export default function UserPage() {
 
     if (userId !== "me") {
         if (!isNumber(userId)) {
-            window.location.href = "/";
+            return <Toast state="error" text="L'id de l'utilisateur doit être un nombre." />
         }
     }
 
@@ -192,7 +193,7 @@ export default function UserPage() {
 
                     <div className="rounded-2xl">
                         <div className="p-6 space-y-6">
-                            {books.slice(0, booksDisplayCount).map(book => (
+                            {books.slice(0, booksDisplayCount).map((book) => (
                                 <BookThumbnail
                                     formatter={formatter}
                                     title={book.title}

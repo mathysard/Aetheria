@@ -1,6 +1,15 @@
+import { useParams } from 'react-router-dom';
 import Navbar from '../components/Navbar';
+import { isNumber } from '../utils';
+import Toast from '../components/Toast';
 
 const ReadChapter = () => {
+    const { chapterId } = useParams();
+
+    if (!isNumber(chapterId)) {
+        return <Toast state="error" text="L'id du chapitre doit être un nombre." />
+    }
+    
     return (
         <>
             <Navbar />
