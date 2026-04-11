@@ -147,26 +147,64 @@ const AuthForm = () => {
                                                 type="text"
                                                 name="displayName"
                                                 required
-                                                className="bg-neutral-secondary-medium border-2 border-gray-400 text-heading text-sm rounded-lg focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs placeholder:text-body" placeholder="Nom..."
+                                                className="bg-neutral-secondary-medium border-2 border-gray-400 text-heading text-sm rounded-lg focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs placeholder:text-body"
+                                                placeholder="Nom..."
                                             />
                                         </div>
                                     </div>
                                 )}
 
-                                <div>
-                                    <div className="flex items-center justify-between">
-                                        <label htmlFor="userName" className="font-semibold text-base">Nom d'utilisateur</label>
+                                {authState === "register" ? (
+                                    <div>
+                                        <div className="flex items-center justify-between">
+                                            <label htmlFor="userName" className="font-semibold text-base">Nom d'utilisateur</label>
+                                        </div>
+                                        <div className="mt-2">
+                                            <input
+                                                id="userName"
+                                                type="text"
+                                                name="userName"
+                                                required
+                                                className="bg-neutral-secondary-medium border-2 border-gray-400 text-heading text-sm rounded-lg focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs placeholder:text-body"
+                                                placeholder="Nom d'utilisateur..."
+                                            />
+                                        </div>
                                     </div>
-                                    <div className="mt-2">
-                                        <input
-                                            id="userName"
-                                            type="text"
-                                            name="userName"
-                                            required
-                                            className="bg-neutral-secondary-medium border-2 border-gray-400 text-heading text-sm rounded-lg focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs placeholder:text-body" placeholder="Nom d'utilisateur..."
-                                        />
+                                ) : (
+                                    <div>
+                                        <div className="flex items-center justify-between">
+                                            <label htmlFor="identifier" className="font-semibold text-base">Identifiant</label>
+                                        </div>
+                                        <div className="mt-2">
+                                            <input
+                                                id="identifier"
+                                                type="text"
+                                                name="identifier"
+                                                required
+                                                className="bg-neutral-secondary-medium border-2 border-gray-400 text-heading text-sm rounded-lg focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs placeholder:text-body"
+                                                placeholder="Identifiant..."
+                                            />
+                                        </div>
                                     </div>
-                                </div>
+                                )}
+
+                                {authState === "register" && (
+                                    <div>
+                                        <div className="flex items-center justify-between">
+                                            <label htmlFor="email" className="font-semibold text-base">E-mail</label>
+                                        </div>
+                                        <div className="mt-2">
+                                            <input
+                                                id="email"
+                                                type="email"
+                                                name="email"
+                                                required
+                                                className="bg-neutral-secondary-medium border-2 border-gray-400 text-heading text-sm rounded-lg focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs placeholder:text-body"
+                                                placeholder="E-mail..."
+                                            />
+                                        </div>
+                                    </div>
+                                )}
 
                                 <div>
                                     <div className="flex items-center justify-between">
@@ -178,10 +216,29 @@ const AuthForm = () => {
                                             type="password"
                                             name="password"
                                             required
-                                            className="bg-neutral-secondary-medium border-2 border-gray-400 text-heading text-sm rounded-lg focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs placeholder:text-body" placeholder="Mot de passe..."
+                                            className="bg-neutral-secondary-medium border-2 border-gray-400 text-heading text-sm rounded-lg focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs placeholder:text-body"
+                                            placeholder="Mot de passe..."
                                         />
                                     </div>
                                 </div>
+
+                                {authState === "register" && (
+                                    <div>
+                                        <div className="flex items-center justify-between">
+                                            <label htmlFor="passwordConfirmation" className="font-semibold text-base">Confirmation du mot de passe</label>
+                                        </div>
+                                        <div className="mt-2">
+                                            <input
+                                                id="passwordConfirmation"
+                                                type="password"
+                                                name="passwordConfirmation"
+                                                required
+                                                className="bg-neutral-secondary-medium border-2 border-gray-400 text-heading text-sm rounded-lg focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs placeholder:text-body"
+                                                placeholder="Confirmation du mot de passe..."
+                                            />
+                                        </div>
+                                    </div>
+                                )}
 
                                 <div>
                                     <button type="submit" className="flex w-full justify-center rounded-md text-white cursor-pointer bg-blue-500 hover:bg-blue-600 active:bg-blue-800 px-3 py-1.5 text-sm/6 font-semibold text-blackfocus-visible:outline-2 focus-visible:outline-offset-2">{authState === "login" ? "Se connecter" : "S'inscrire"}</button>

@@ -30,32 +30,41 @@ const App = () => {
 
         if(routesTitle.hasOwnProperty(url)) {
             document.title = `${baseTitle} — ${routesTitle[url]}`;
+            return;
         }
 
         // /book/{id}/update
         if(/^\/book\/\d+\/update$/.test(url)) {
             document.title = `${baseTitle} — Modifier un livre`;
+            return;
         }
 
         // /book/{id}/chapter/create
         if(/^\/book\/\d+\/chapter\/create$/.test(url)) {
             document.title = `${baseTitle} — Créer un chapitre`;
+            return;
         }
 
         // /user/{id}
         if(/^\/user\/\d+$/.test(url)) {
             document.title = `${baseTitle} — Utilisateur`;
+            return;
         }
 
         // /chapter/{id}
         if(/^\/chapter\/\d+$/.test(url)) {
             document.title = `${baseTitle} — Chapitre`;
+            return;
         }
 
         // /search/{userSearch}
         if(/^\/search\/.*$/.test(url)) {
             document.title = `${baseTitle} — Recherche`;
+            return;
         }
+
+        document.title = "Aetheria";
+        return;
     }, []);
 
     return (
@@ -91,7 +100,7 @@ const App = () => {
                 />
 
                 <Route
-                    path="/book/create"
+                    path="/createBook"
                     element={<CreateBook />}
                 />
 

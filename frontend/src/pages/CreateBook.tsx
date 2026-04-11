@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState, type Ref, type RefObject } from 'react'
 import Navbar from "../components/Navbar"
-import { dataURIToBlob, createUniqueId } from '../utils';
+import { createUniqueId } from '../utils';
 
 interface CharacterInterface {
     firstName: string;
@@ -12,7 +12,7 @@ interface CharacterInterface {
     race: string;
     age: string;
     uuid: string;
-    image: Blob|null;
+    image: File|null;
     imageBase64: string;
     public: boolean;
     userFields: {
@@ -33,7 +33,7 @@ interface LocationInterface {
     name: string;
     description: string;
     uuid: string;
-    image: Blob|null;
+    image: File|null;
     imageBase64: string;
     public: boolean;
     userFields: {
@@ -97,7 +97,7 @@ const BookForm = ({bookTitleRef, bookDescriptionRef, bookGenreRef, bookKeywordsR
     const [friendsOnlyIsDisplayed, setFriendsOnlyIsDisplayed] = useState(false);
 
     return (
-        <form>
+        <>
             <div className="mb-6">
                 <label className="font-semibold text-base">Titre (0/255)</label>
                 <div className="my-1.5" />
@@ -165,19 +165,17 @@ const BookForm = ({bookTitleRef, bookDescriptionRef, bookGenreRef, bookKeywordsR
                     }}
                 />
             </div>
-            {triggerWarningsAreDisplayed && (
-                <div className="mb-6">
-                    <label className="font-semibold text-base">Trigger Warning(s)</label>
-                    <div className="my-1.5" />
-                    <textarea
-                        id="bookTriggerWarnings"
-                        ref={bookTriggerWarningsRef}
-                        name="triggerWarnings"
-                        className="bg-neutral-secondary-medium border-2 border-gray-400 text-heading text-sm rounded-lg focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs placeholder:text-body"
-                        placeholder="Trigger Warnings..."
-                    />
-                </div>
-            )}
+            <div className={`mb-6 ${!triggerWarningsAreDisplayed ? "hidden" : ""}`}>
+                <label className="font-semibold text-base">Trigger Warning(s)</label>
+                <div className="my-1.5" />
+                <textarea
+                    id="bookTriggerWarnings"
+                    ref={bookTriggerWarningsRef}
+                    name="triggerWarnings"
+                    className="bg-neutral-secondary-medium border-2 border-gray-400 text-heading text-sm rounded-lg focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs placeholder:text-body"
+                    placeholder="Trigger Warnings..."
+                />
+            </div>
             <div className="mb-6">
                 <label className="font-semibold text-base">Visibilité</label>
                 <div className="my-1.5" />
@@ -197,18 +195,16 @@ const BookForm = ({bookTitleRef, bookDescriptionRef, bookGenreRef, bookKeywordsR
                     <option value="private">Privé</option>
                 </select>
             </div>
-            {friendsOnlyIsDisplayed && (
-                <div>
-                    <label className="font-semibold text-base mr-2">Visible aux ami(e)s uniquement</label>
-                    <input
-                        type="checkbox"
-                        id="bookFriendsOnly"
-                        ref={bookFriendsOnlyRef}
-                        name="friendsOnly"
-                    />
-                </div>
-            )}
-        </form>
+            <div className={!friendsOnlyIsDisplayed ? "hidden" : ""}>
+                <label className="font-semibold text-base mr-2">Visible aux ami(e)s uniquement</label>
+                <input
+                    type="checkbox"
+                    id="bookFriendsOnly"
+                    ref={bookFriendsOnlyRef}
+                    name="friendsOnly"
+                />
+            </div>
+        </>
     );
 }
 
@@ -756,8 +752,8 @@ const CharactersForm = ({characters, setCharacters, setRelations, charactersDivR
 
                                 var file = (target.files as FileList)[0];
                                 var reader = new FileReader();
+                                foundCharacter.image = file;
                                 reader.onloadend = function() {
-                                    foundCharacter.image = dataURIToBlob(reader.result as string);
                                     foundCharacter.imageBase64 = reader.result as string;
                                     setLoadState(prev => !prev);
                                 }
@@ -1392,8 +1388,8 @@ const LocationsForm = ({locations, setLocations, locationsDivRef, locationFormRe
 
                                 var file = (target.files as FileList)[0];
                                 var reader = new FileReader();
+                                foundLocation.image = file;
                                 reader.onloadend = function() {
-                                    foundLocation.image = dataURIToBlob(reader.result as string);
                                     foundLocation.imageBase64 = reader.result as string;
                                     setLoadState(prev => !prev);
                                 }
@@ -1413,6 +1409,8 @@ const CreateBook = () => {
     const [activeScreen, setActiveScreen] = useState<"book"|"characters"|"relations"|"locations"|"chapters">("book");
     const [cover, setCover] = useState<any>(null);
     const [coverBase64, setCoverBase64] = useState<string>();
+    const [fetchState, setFetchState] = useState<"book"|"characters"|"relations"|"locations">("characters");
+    const presentationOnLocal = useState(false); // Will be removed eventually, it's just for my classes.
 
     const bookTitleRef: Ref<HTMLInputElement | null> = useRef(null);
     const bookDescriptionRef: Ref<HTMLTextAreaElement | null> = useRef(null);
@@ -1435,21 +1433,59 @@ const CreateBook = () => {
     const locationFormRef = useRef(null);
 
     const bookCoverInputRef: RefObject<HTMLInputElement|null> = useRef(null);
+    
+    const handleSubmit = () => {
+        const formData = new FormData();
+        switch(fetchState) {
+            case "book":
+                if(cover) {
+                    formData.append('cover', cover, cover.name)
+                }
+                formData.append('title', bookTitleRef.current?.value as string);
+                formData.append('description', bookDescriptionRef.current?.value as string);
+                formData.append('genre', bookGenreRef.current?.value as string);
+                formData.append('keywords', bookKeywordsRef.current?.value as string);
+                formData.append('isNsfw', (bookIsNsfwRef.current as HTMLInputElement).checked.toString());
+                formData.append('triggerWarnings', bookTriggerWarningsRef.current?.value as string);
+                formData.append('visibility', bookVisibilityRef.current?.value as string);
+                formData.append('friendsOnly', (bookFriendsOnlyRef.current as HTMLInputElement).checked.toString());
+                formData.append('characters', JSON.stringify(characters));
+                break;
+            case "characters":
+                characters.map(character => {
+                    if(character.image && character.imageBase64) {
+                        formData.append(character.uuid, character.image, character.image.name);
+                    }
+                })
+                formData.append('characters', JSON.stringify(characters));
+                break;
+            case "relations":
+                formData.append('relations', JSON.stringify(relations));
+                break;
+            case "locations":
+                locations.map(location => {
+                    if(location.image && location.imageBase64) {
+                        formData.append(location.uuid, location.image, location.image.name);
+                    }
+                })
+                formData.append('locations', JSON.stringify(locations));
+                break;
+        }
 
-    const formData = {
-        cover: cover,
-        title: bookTitleRef.current?.value,
-        description: bookDescriptionRef.current?.value,
-        genre: bookGenreRef.current?.value,
-        keywords: bookKeywordsRef.current?.value,
-        isNsfw: bookIsNsfwRef.current?.value,
-        triggerWarnings: bookTriggerWarningsRef.current?.value,
-        visibility: bookVisibilityRef.current?.value,
-        friendsOnly: bookFriendsOnlyRef.current?.value,
-        characters: characters,
-        relations: relations,
-        locations: locations
-    };
+        if(presentationOnLocal) {
+            fetch("https://127.0.0.1:8000/api/createBook", {
+                method: 'POST',
+                body: formData
+            })
+            .then(res => res.ok ? res.json() : null)
+            .then(res => {
+                console.log(res);
+            })
+            .catch(error => {
+                console.error(error);
+            })
+        }
+    }
 
     return (
         <>
@@ -1486,11 +1522,46 @@ const CreateBook = () => {
                     </div>
                     <div className="ml-[8%] px-8 pt-4 bg-white shadow-xl">
                         <div className="flex h-max border-b-2 mb-8 border-gray-400">
-                            <p className={`text-2xl font-semibold mb-4 mr-16 ${activeScreen === "book" ? "text-blue-400" : ""} cursor-pointer hover:text-blue-400 active:text-blue-600`} onClick={() => setActiveScreen("book")}>Livre</p>
-                            <p className={`text-2xl font-semibold mb-4 mr-16 ${activeScreen === "characters" ? "text-blue-400" : ""} cursor-pointer hover:text-blue-400 active:text-blue-600`} onClick={() => setActiveScreen("characters")}>Personnages</p>
-                            <p className={`text-2xl font-semibold mb-4 mr-16 ${activeScreen === "relations" ? "text-blue-400" : ""} cursor-pointer hover:text-blue-400 active:text-blue-600`} onClick={() => setActiveScreen("relations")}>Relations</p>
-                            <p className={`text-2xl font-semibold mb-4 mr-16 ${activeScreen === "locations" ? "text-blue-400" : ""} cursor-pointer hover:text-blue-400 active:text-blue-600`} onClick={() => setActiveScreen("locations")}>Lieux</p>
-                            <p className={`text-2xl font-semibold mb-4 ${activeScreen === "chapters" ? "text-blue-400" : ""} cursor-pointer hover:text-blue-400 active:text-blue-600`} onClick={() => setActiveScreen("chapters")}>Chapitres</p>
+                            <p
+                                className={`text-2xl font-semibold mb-4 mr-16 ${activeScreen === "book" ? "text-blue-400" : ""} cursor-pointer hover:text-blue-400 active:text-blue-600`}
+                                onClick={() => {
+                                    setActiveScreen("book")
+                                }}
+                            >
+                                Livre
+                            </p>
+                            <p
+                                className={`text-2xl font-semibold mb-4 mr-16 ${activeScreen === "characters" ? "text-blue-400" : ""} cursor-pointer hover:text-blue-400 active:text-blue-600`}
+                                onClick={() => {
+                                    setActiveScreen("characters")
+                                }}
+                            >
+                                Personnages
+                            </p>
+                            <p
+                                className={`text-2xl font-semibold mb-4 mr-16 ${activeScreen === "relations" ? "text-blue-400" : ""} cursor-pointer hover:text-blue-400 active:text-blue-600`}
+                                onClick={() => {
+                                    setActiveScreen("relations")
+                                }}
+                            >
+                                Relations
+                            </p>
+                            <p
+                                className={`text-2xl font-semibold mb-4 mr-16 ${activeScreen === "locations" ? "text-blue-400" : ""} cursor-pointer hover:text-blue-400 active:text-blue-600`}
+                                onClick={() => {
+                                    setActiveScreen("locations")
+                                }}
+                            >
+                                Lieux
+                            </p>
+                            <p
+                                className={`text-2xl font-semibold mb-4 ${activeScreen === "chapters" ? "text-blue-400" : ""} cursor-pointer hover:text-blue-400 active:text-blue-600`}
+                                onClick={() => {
+                                    setActiveScreen("chapters")
+                                }}
+                            >
+                                Chapitres
+                            </p>
                         </div>
                         <div className={activeScreen !== "book" ? "hidden" : ""}>
                             <BookForm
@@ -1501,7 +1572,7 @@ const CreateBook = () => {
                                 bookIsNsfwRef={bookIsNsfwRef}
                                 bookTriggerWarningsRef={bookTriggerWarningsRef}
                                 bookVisibilityRef={bookVisibilityRef}
-                                bookFriendsOnlyRef={bookKeywordsRef}
+                                bookFriendsOnlyRef={bookFriendsOnlyRef}
                             />
                         </div>
                         <div className={activeScreen !== "characters" ? "hidden" : ""}>
@@ -1520,7 +1591,7 @@ const CreateBook = () => {
                             || (activeScreen === "locations" && locations.length > 0)
                         ) && (
                             <div className="text-right mt-16 mb-4">
-                                <button className="px-4 py-2 rounded-lg bg-blue-600 text-white font-semibold hover:bg-blue-800 hover:cursor-pointer active:bg-blue-900 shadow-xl disabled:bg-blue-900 disabled:cursor-not-allowed" disabled={(activeScreen === "relations" && relations.length > 0 && relations.find(rel => rel.characterOne.uuid == "" || rel.characterTwo.uuid == "")) as boolean}>Créer</button>
+                                <button className="px-4 py-2 rounded-lg bg-blue-600 text-white font-semibold hover:bg-blue-800 hover:cursor-pointer active:bg-blue-900 shadow-xl disabled:bg-blue-900 disabled:cursor-not-allowed" disabled={(activeScreen === "relations" && relations.length > 0 && relations.find(rel => rel.characterOne.uuid == "" || rel.characterTwo.uuid == "")) as boolean} onClick={handleSubmit}>Créer</button>
                             </div>
                         )}
                     </div>
@@ -1539,8 +1610,8 @@ const CreateBook = () => {
 
                     var file = (target.files as FileList)[0];
                     var reader = new FileReader();
+                    setCover(file);
                     reader.onloadend = function() {
-                        setCover(dataURIToBlob(reader.result as string));
                         setCoverBase64(reader.result as string);
                     }
                     reader.readAsDataURL(file);
