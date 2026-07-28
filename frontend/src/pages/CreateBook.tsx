@@ -90,11 +90,13 @@ interface BookFormInterface {
     bookTriggerWarningsRef: Ref<HTMLTextAreaElement | null>;
     bookVisibilityRef: Ref<HTMLSelectElement | null>;
     bookFriendsOnlyRef: Ref<HTMLInputElement | null>;
+    fetchIsActive: boolean;
 }
 
-const BookForm = ({bookTitleRef, bookDescriptionRef, bookGenreRef, bookKeywordsRef, bookIsNsfwRef, bookTriggerWarningsRef, bookVisibilityRef, bookFriendsOnlyRef}: BookFormInterface) => {
+const BookForm = ({bookTitleRef, bookDescriptionRef, bookGenreRef, bookKeywordsRef, bookIsNsfwRef, bookTriggerWarningsRef, bookVisibilityRef, bookFriendsOnlyRef, fetchIsActive}: BookFormInterface) => {
     const [triggerWarningsAreDisplayed, setTriggerWarningsAreDisplayed] = useState(false);
     const [friendsOnlyIsDisplayed, setFriendsOnlyIsDisplayed] = useState(false);
+    const [titleIsMaxCharacters, setTitleIsMaxCharacters] = useState(false);
 
     return (
         <>
@@ -108,8 +110,15 @@ const BookForm = ({bookTitleRef, bookDescriptionRef, bookGenreRef, bookKeywordsR
                     name="title"
                     className="bg-neutral-secondary-medium border-2 border-gray-400 text-heading text-sm rounded-lg focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs placeholder:text-body"
                     placeholder="Titre..."
+                    disabled={fetchIsActive}
                     onInput={(e) => {
                         const target = e.target as HTMLInputElement;
+                        if(titleIsMaxCharacters && target.value.length > 255) {
+                            target.value = target.value.slice(0, 255);
+                        };
+                        if(titleIsMaxCharacters) return;
+                        setTitleIsMaxCharacters(target.value.length >= 255);
+
                         const parentElement = target.parentElement as HTMLDivElement;
                         parentElement.children[0].textContent = `Titre (${target.value.length}/255)`
                     }}
@@ -124,6 +133,7 @@ const BookForm = ({bookTitleRef, bookDescriptionRef, bookGenreRef, bookKeywordsR
                     name="description"
                     className="bg-neutral-secondary-medium border-2 border-gray-400 text-heading text-sm rounded-lg focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs placeholder:text-body"
                     placeholder="Description..."
+                    disabled={fetchIsActive}
                 />
             </div>
             <div className="mb-6">
@@ -133,12 +143,13 @@ const BookForm = ({bookTitleRef, bookDescriptionRef, bookGenreRef, bookKeywordsR
                     id="bookGenre"
                     ref={bookGenreRef}
                     name="genre"
+                    disabled={fetchIsActive}
                     className="bg-neutral-secondary-medium border-2 border-gray-400 text-heading text-sm rounded-lg focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs placeholder:text-body"
                 >
                     <option></option>
                 </select>
             </div>
-            <div className="mb-6">
+            {/* <div className="mb-6">
                 <label className="font-semibold text-base">Mots-clés</label>
                 <div className="my-1.5" />
                 <input
@@ -150,7 +161,7 @@ const BookForm = ({bookTitleRef, bookDescriptionRef, bookGenreRef, bookKeywordsR
                     placeholder="Mots-clés..."
                 />
                 <p className="text-sm mt-1">Séparer par une virgule.</p>
-            </div>
+            </div> */}
             <div className="mb-6">
                 <label className="font-semibold text-base mr-2">Mature</label>
                 <input
@@ -158,6 +169,7 @@ const BookForm = ({bookTitleRef, bookDescriptionRef, bookGenreRef, bookKeywordsR
                     name="nsfw"
                     id="bookNsfw"
                     ref={bookIsNsfwRef}
+                    disabled={fetchIsActive}
                     onClick={(e) => {
                         const target = e.target as HTMLInputElement;
 
@@ -174,6 +186,7 @@ const BookForm = ({bookTitleRef, bookDescriptionRef, bookGenreRef, bookKeywordsR
                     name="triggerWarnings"
                     className="bg-neutral-secondary-medium border-2 border-gray-400 text-heading text-sm rounded-lg focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs placeholder:text-body"
                     placeholder="Trigger Warnings..."
+                    disabled={fetchIsActive}
                 />
             </div>
             <div className="mb-6">
@@ -183,6 +196,7 @@ const BookForm = ({bookTitleRef, bookDescriptionRef, bookGenreRef, bookKeywordsR
                     id="bookVisibility"
                     ref={bookVisibilityRef}
                     name="visibility"
+                    disabled={fetchIsActive}
                     className="bg-neutral-secondary-medium border-2 border-gray-400 text-heading text-sm rounded-lg focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs placeholder:text-body"
                     onChange={(e) => {
                         const target = e.target as HTMLSelectElement;
@@ -195,7 +209,7 @@ const BookForm = ({bookTitleRef, bookDescriptionRef, bookGenreRef, bookKeywordsR
                     <option value="private">Privé</option>
                 </select>
             </div>
-            <div className={!friendsOnlyIsDisplayed ? "hidden" : ""}>
+            {/* <div className={!friendsOnlyIsDisplayed ? "hidden" : ""}>
                 <label className="font-semibold text-base mr-2">Visible aux ami(e)s uniquement</label>
                 <input
                     type="checkbox"
@@ -203,7 +217,7 @@ const BookForm = ({bookTitleRef, bookDescriptionRef, bookGenreRef, bookKeywordsR
                     ref={bookFriendsOnlyRef}
                     name="friendsOnly"
                 />
-            </div>
+            </div> */}
         </>
     );
 }
@@ -284,7 +298,7 @@ const CharacterCard = ({character, dialogRef, setChosenCharacter, setCharacters,
                     <path strokeLinecap="round" strokeLinejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
                 </svg>
 
-                {character.public === true ? (
+                {/* {character.public === true ? (
                     <button
                         className="border-2 border-gray-400 rounded-full py-1 px-2 flex cursor-pointer"
                         onClick={() => {
@@ -320,7 +334,7 @@ const CharacterCard = ({character, dialogRef, setChosenCharacter, setCharacters,
                     </svg>
                         <p className="ml-2 mr-1 text-gray-600">Privé</p>
                     </button>
-                )}
+                )} */}
 
                 <button
                     className="inline-flex items-center text-white bg-blue-500 box-border border border-transparent hover:bg-brand-strong focus:ring-4 focus:ring-brand-medium shadow-xs font-medium leading-5 rounded-base text-sm px-4 py-2.5 cursor-pointer hover:bg-blue-600 active:bg-blue-700"
@@ -424,7 +438,10 @@ const CharactersForm = ({characters, setCharacters, setRelations, charactersDivR
                             strokeWidth="1.5"
                             stroke="currentColor"
                             className="size-6 cursor-pointer"
-                            onClick={() => dialogRef.current?.close()}
+                            onClick={() => {
+                                dialogRef.current?.close();
+                                (document.getElementById('characterUserFieldCreate') as HTMLInputElement).value = "";
+                            }}
                         >
                             <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
                         </svg>
@@ -704,7 +721,7 @@ const CharactersForm = ({characters, setCharacters, setRelations, charactersDivR
                         ))}
                         <div className="bg-gray-400 w-full h-0.5 mt-2 mb-8" />
                         <div className="flex justify-between mb-6">
-                            <input type="text" placeholder="Nom du champ..." className="bg-neutral-secondary-medium border-2 border-gray-400 text-heading text-sm rounded-lg focus:ring-brand focus:border-brand block w-[75%] px-3 py-2.5 shadow-xs placeholder:text-body" />
+                            <input type="text" id="characterUserFieldCreate" placeholder="Nom du champ..." className="bg-neutral-secondary-medium border-2 border-gray-400 text-heading text-sm rounded-lg focus:ring-brand focus:border-brand block w-[75%] px-3 py-2.5 shadow-xs placeholder:text-body" />
                             <button
                                 className="px-4 py-2 rounded-lg bg-blue-600 text-white font-semibold hover:bg-blue-800 hover:cursor-pointer active:bg-blue-900 shadow-xl"
                                 onClick={(e) => {
@@ -820,7 +837,7 @@ const RelationsForm = ({relations, setRelations, characters, relationsDivRef}: R
                 {characters.length < 1 && (
                     <>
                         <p className="text-red-500 mt-2">⛔ Veuillez créer au moins un personnage pour pouvoir ajouter une relation.</p>
-                        <p className="text-orange-500">⚠️ De préférence, veuillez également renseigner soit un des noms des personnages crées.</p>
+                        <p className="text-orange-500">⚠️ De préférence, veuillez également renseigner le nom des personnages créés.</p>
                     </>
                 )}
             </div>
@@ -1065,7 +1082,7 @@ const LocationCard = ({location, dialogRef, setChosenLocation, setLocations}: Lo
                     <path strokeLinecap="round" strokeLinejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
                 </svg>
 
-                {location.public === true ? (
+                {/* {location.public === true ? (
                     <button
                         className="border-2 border-gray-400 rounded-full py-1 px-2 flex cursor-pointer"
                         onClick={() => {
@@ -1101,7 +1118,7 @@ const LocationCard = ({location, dialogRef, setChosenLocation, setLocations}: Lo
                     </svg>
                         <p className="ml-2 mr-1 text-gray-600">Privé</p>
                     </button>
-                )}
+                )} */}
 
                 <button
                     className="inline-flex items-center text-white bg-blue-500 box-border border border-transparent hover:bg-brand-strong focus:ring-4 focus:ring-brand-medium shadow-xs font-medium leading-5 rounded-base text-sm px-4 py-2.5 cursor-pointer hover:bg-blue-600 active:bg-blue-700"
@@ -1199,7 +1216,10 @@ const LocationsForm = ({locations, setLocations, locationsDivRef, locationFormRe
                             strokeWidth="1.5"
                             stroke="currentColor"
                             className="size-6 cursor-pointer"
-                            onClick={() => dialogRef.current?.close()}
+                            onClick={() => {
+                                dialogRef.current?.close();
+                                (document.getElementById('locationUserFieldCreate') as HTMLInputElement).value = "";
+                            }}
                         >
                             <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
                         </svg>
@@ -1271,8 +1291,7 @@ const LocationsForm = ({locations, setLocations, locationsDivRef, locationFormRe
                         <div className="pb-6">
                             <label className="font-semibold text-base">Description</label>
                             <div className="my-1.5" />
-                            <input
-                                type="text"
+                            <textarea
                                 id="locationDescription"
                                 name="description"
                                 className="bg-neutral-secondary-medium border-2 border-gray-400 text-heading text-sm rounded-lg focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs placeholder:text-body"
@@ -1289,7 +1308,7 @@ const LocationsForm = ({locations, setLocations, locationsDivRef, locationFormRe
                                         return newLocations;
                                     });
                                 }}
-                            />
+                            ></textarea>
                         </div>
                         {chosenLocation?.userFields.map((field: any, fieldI: number) => (
                             <div className="pb-6" key={`location-${chosenLocation?.uuid}-user-field-${field.uuid}`}>
@@ -1340,7 +1359,7 @@ const LocationsForm = ({locations, setLocations, locationsDivRef, locationFormRe
                         ))}
                         <div className="bg-gray-400 w-full h-0.5 mt-2 mb-8" />
                         <div className="flex justify-between mb-6">
-                            <input type="text" placeholder="Nom du champ..." className="bg-neutral-secondary-medium border-2 border-gray-400 text-heading text-sm rounded-lg focus:ring-brand focus:border-brand block w-[75%] px-3 py-2.5 shadow-xs placeholder:text-body" />
+                            <input type="text" id="locationUserFieldCreate" placeholder="Nom du champ..." className="bg-neutral-secondary-medium border-2 border-gray-400 text-heading text-sm rounded-lg focus:ring-brand focus:border-brand block w-[75%] px-3 py-2.5 shadow-xs placeholder:text-body" />
                             <button
                                 className="px-4 py-2 rounded-lg bg-blue-600 text-white font-semibold hover:bg-blue-800 hover:cursor-pointer active:bg-blue-900 shadow-xl"
                                 onClick={(e) => {
@@ -1410,6 +1429,7 @@ const CreateBook = () => {
     const [cover, setCover] = useState<any>(null);
     const [coverBase64, setCoverBase64] = useState<string>();
     const [fetchState, setFetchState] = useState<"book"|"characters"|"relations"|"locations">("characters");
+    const [fetchIsActive, setFetchIsActive] = useState(false);
     const presentationOnLocal = useState(false); // Will be removed eventually, it's just for my classes.
 
     const bookTitleRef: Ref<HTMLInputElement | null> = useRef(null);
@@ -1433,9 +1453,18 @@ const CreateBook = () => {
     const locationFormRef = useRef(null);
 
     const bookCoverInputRef: RefObject<HTMLInputElement|null> = useRef(null);
+
+    const frenchScreens = {
+        "book": "Livre",
+        "characters": "Personnages",
+        "relations": "Relations",
+        "locations": "Lieux",
+        "chapters": "Chapitres"
+    }
     
     const handleSubmit = () => {
         const formData = new FormData();
+
         switch(fetchState) {
             case "book":
                 if(cover) {
@@ -1444,7 +1473,6 @@ const CreateBook = () => {
                 formData.append('title', bookTitleRef.current?.value as string);
                 formData.append('description', bookDescriptionRef.current?.value as string);
                 formData.append('genre', bookGenreRef.current?.value as string);
-                formData.append('keywords', bookKeywordsRef.current?.value as string);
                 formData.append('isNsfw', (bookIsNsfwRef.current as HTMLInputElement).checked.toString());
                 formData.append('triggerWarnings', bookTriggerWarningsRef.current?.value as string);
                 formData.append('visibility', bookVisibilityRef.current?.value as string);
@@ -1459,9 +1487,6 @@ const CreateBook = () => {
                 })
                 formData.append('characters', JSON.stringify(characters));
                 break;
-            case "relations":
-                formData.append('relations', JSON.stringify(relations));
-                break;
             case "locations":
                 locations.map(location => {
                     if(location.image && location.imageBase64) {
@@ -1469,6 +1494,9 @@ const CreateBook = () => {
                     }
                 })
                 formData.append('locations', JSON.stringify(locations));
+                break;
+            case "relations":
+                formData.append('relations', JSON.stringify(relations));
                 break;
         }
 
@@ -1484,6 +1512,15 @@ const CreateBook = () => {
             .catch(error => {
                 console.error(error);
             })
+        }
+    }
+
+    document.onkeydown = (e: any) => {
+        if(['characters', 'locations'].includes(activeScreen)) {
+            const fieldId = activeScreen === "characters" ? "character" : "location";
+            if(e.key === 'Escape') {
+                (document.getElementById(`${fieldId}UserFieldCreate`) as HTMLInputElement).value = '';
+            }
         }
     }
 
@@ -1521,48 +1558,59 @@ const CreateBook = () => {
                         )}
                     </div>
                     <div className="ml-[8%] px-8 pt-4 bg-white shadow-xl">
-                        <div className="flex h-max border-b-2 mb-8 border-gray-400">
+                        <div className="flex h-max border-b-2 mb-4 border-gray-400">
                             <p
-                                className={`text-2xl font-semibold mb-4 mr-16 ${activeScreen === "book" ? "text-blue-400" : ""} cursor-pointer hover:text-blue-400 active:text-blue-600`}
+                                className={`text-2xl font-semibold mb-4 mr-16 ${activeScreen === "book" ? "text-blue-400" : ""} ${fetchIsActive ? "cursor-not-allowed" : "cursor-pointer"} ${fetchIsActive ? "hover:text-red-400" : "hover:text-blue-400"} ${fetchIsActive ? "" : "active:text-blue-600"}`}
                                 onClick={() => {
-                                    setActiveScreen("book")
+                                    if(!fetchIsActive) {
+                                        setActiveScreen("book")
+                                    }
                                 }}
                             >
                                 Livre
                             </p>
                             <p
-                                className={`text-2xl font-semibold mb-4 mr-16 ${activeScreen === "characters" ? "text-blue-400" : ""} cursor-pointer hover:text-blue-400 active:text-blue-600`}
+                                className={`text-2xl font-semibold mb-4 mr-16 ${activeScreen === "characters" ? "text-blue-400" : ""} ${fetchIsActive ? "cursor-not-allowed" : "cursor-pointer"} ${fetchIsActive ? "hover:text-red-400" : "hover:text-blue-400"} ${fetchIsActive ? "" : "active:text-blue-600"}`}
                                 onClick={() => {
-                                    setActiveScreen("characters")
+                                    if(!fetchIsActive) {
+                                        setActiveScreen("characters")
+                                    }
                                 }}
                             >
                                 Personnages
                             </p>
                             <p
-                                className={`text-2xl font-semibold mb-4 mr-16 ${activeScreen === "relations" ? "text-blue-400" : ""} cursor-pointer hover:text-blue-400 active:text-blue-600`}
+                                className={`text-2xl font-semibold mb-4 mr-16 ${activeScreen === "relations" ? "text-blue-400" : ""} ${fetchIsActive ? "cursor-not-allowed" : "cursor-pointer"} ${fetchIsActive ? "hover:text-red-400" : "hover:text-blue-400"} ${fetchIsActive ? "" : "active:text-blue-600"}`}
                                 onClick={() => {
-                                    setActiveScreen("relations")
+                                    if(!fetchIsActive) {
+                                        setActiveScreen("relations")
+                                    }
                                 }}
                             >
                                 Relations
                             </p>
                             <p
-                                className={`text-2xl font-semibold mb-4 mr-16 ${activeScreen === "locations" ? "text-blue-400" : ""} cursor-pointer hover:text-blue-400 active:text-blue-600`}
+                                className={`text-2xl font-semibold mb-4 mr-16 ${activeScreen === "locations" ? "text-blue-400" : ""} ${fetchIsActive ? "cursor-not-allowed" : "cursor-pointer"} ${fetchIsActive ? "hover:text-red-400" : "hover:text-blue-400"} ${fetchIsActive ? "" : "active:text-blue-600"}`}
                                 onClick={() => {
-                                    setActiveScreen("locations")
+                                    if(!fetchIsActive) {
+                                        setActiveScreen("locations")
+                                    }
                                 }}
                             >
                                 Lieux
                             </p>
                             <p
-                                className={`text-2xl font-semibold mb-4 ${activeScreen === "chapters" ? "text-blue-400" : ""} cursor-pointer hover:text-blue-400 active:text-blue-600`}
+                                className={`text-2xl font-semibold mb-4 ${activeScreen === "chapters" ? "text-blue-400" : ""} ${fetchIsActive ? "cursor-not-allowed" : "cursor-pointer"} ${fetchIsActive ? "hover:text-red-400" : "hover:text-blue-400"} ${fetchIsActive ? "" : "active:text-blue-600"}`}
                                 onClick={() => {
-                                    setActiveScreen("chapters")
+                                    if(!fetchIsActive) {
+                                        setActiveScreen("chapters")
+                                    }
                                 }}
                             >
                                 Chapitres
                             </p>
                         </div>
+                        <i><p className="text-center mb-4">Les données qui seront sauvegardées sont celles de l'écran "{frenchScreens[activeScreen]}" uniquement.</p></i>
                         <div className={activeScreen !== "book" ? "hidden" : ""}>
                             <BookForm
                                 bookTitleRef={bookTitleRef}
@@ -1573,6 +1621,7 @@ const CreateBook = () => {
                                 bookTriggerWarningsRef={bookTriggerWarningsRef}
                                 bookVisibilityRef={bookVisibilityRef}
                                 bookFriendsOnlyRef={bookFriendsOnlyRef}
+                                fetchIsActive={fetchIsActive}
                             />
                         </div>
                         <div className={activeScreen !== "characters" ? "hidden" : ""}>
@@ -1584,6 +1633,39 @@ const CreateBook = () => {
                         <div className={activeScreen !== "locations" ? "hidden" : ""}>
                             <LocationsForm locations={locations} setLocations={setLocations} locationsDivRef={locationsDivRef} locationFormRef={locationFormRef} />
                         </div>
+                        <div className={activeScreen !== "chapters" ? "hidden" : ""}>
+                            <div className="w-full text-center">
+                                <button
+                                    className="px-4 py-2 rounded-lg bg-blue-600 text-white font-semibold hover:bg-blue-800 hover:cursor-pointer active:bg-blue-900 shadow-xl disabled:bg-blue-400 disabled:cursor-not-allowed"
+                                >
+                                    Ajouter un chapitre
+                                </button>
+                            </div>
+
+                            <div className="w-full border-gray-300 rounded-lg border-2 mt-8 pb-4">
+                                <div className="ml-4 mt-4">
+                                    <p className="mt-1 text-lg font-semibold">Univers parallèle</p>
+                                    <div className="flex pt-2 pb-1">
+                                        <div className="flex">
+                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="oklch(55.1% 0.027 264.364)" className="size-6">
+                                                <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" />
+                                                <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+                                            </svg>
+                                            <p className="pl-1 text-gray-600">42</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="w-full text-end">
+                                    <button
+                                        className="inline-flex items-center text-white bg-blue-500 box-border border border-transparent hover:bg-brand-strong focus:ring-4 focus:ring-brand-medium shadow-xs font-medium leading-5 rounded-base text-sm px-4 py-2.5 cursor-pointer hover:bg-blue-600 active:bg-blue-700 text-end mr-4"
+                                    >
+                                        Voir
+                                        <svg className="w-4 h-4 ms-1.5 rtl:rotate-180 -me-0.5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24"><path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 12H5m14 0-4 4m4-4-4-4"/></svg>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
                         {(
                             (activeScreen === "book")
                             || (activeScreen === "characters" && characters.length > 0)
@@ -1591,7 +1673,20 @@ const CreateBook = () => {
                             || (activeScreen === "locations" && locations.length > 0)
                         ) && (
                             <div className="text-right mt-16 mb-4">
-                                <button className="px-4 py-2 rounded-lg bg-blue-600 text-white font-semibold hover:bg-blue-800 hover:cursor-pointer active:bg-blue-900 shadow-xl disabled:bg-blue-900 disabled:cursor-not-allowed" disabled={(activeScreen === "relations" && relations.length > 0 && relations.find(rel => rel.characterOne.uuid == "" || rel.characterTwo.uuid == "")) as boolean} onClick={handleSubmit}>Créer</button>
+                                <button
+                                    className="px-4 py-2 rounded-lg bg-blue-600 text-white font-semibold hover:bg-blue-800 hover:cursor-pointer active:bg-blue-900 shadow-xl disabled:bg-blue-900 disabled:cursor-not-allowed"
+                                    disabled={
+                                        (
+                                            activeScreen === "relations"
+                                            && relations.length > 0
+                                            && relations.filter(rel => rel.characterOne.uuid == "" || rel.characterTwo.uuid == "").length > 0
+                                        )
+                                        || (fetchIsActive)
+                                    }
+                                    onClick={handleSubmit}
+                                >
+                                    Créer
+                                </button>
                             </div>
                         )}
                     </div>

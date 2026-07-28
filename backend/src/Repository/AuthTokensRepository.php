@@ -3,6 +3,7 @@
 namespace App\Repository;
 
 use App\Entity\AuthTokens;
+use App\Entity\Users;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 
@@ -40,4 +41,16 @@ class AuthTokensRepository extends ServiceEntityRepository
     //            ->getOneOrNullResult()
     //        ;
     //    }
+
+    public function findByUserAndValidity(Users $user)
+    {
+        $qb = $this->createQueryBuilder('at');
+
+        return $qb->andWhere('at.user = :user')
+                    ->setParameter('user', $user)
+                    ->andWhere('at.validUntil >= :validityDate')
+                    ->setParameter('validityDate', new \DateTime())
+                    ->getQuery()
+                    ->getOneOrNullResult();
+    }
 }

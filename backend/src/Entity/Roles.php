@@ -29,10 +29,10 @@ class Roles
     private ?\DateTime $createdAt = null;
 
     #[ORM\ManyToOne]
-    #[ORM\JoinColumn(nullable: false)]
+    #[ORM\JoinColumn(nullable: true)]
     private ?Users $createdBy = null;
 
-    #[ORM\Column]
+    #[ORM\Column(nullable: true)]
     private ?\DateTime $updatedAt = null;
 
     #[ORM\ManyToOne]

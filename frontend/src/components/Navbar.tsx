@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useParams } from "react-router-dom";
 
 const Navbar = () => {
-    const isAuthenticated = localStorage.getItem('auth_token') ?? true;
+    const isAuthenticated = localStorage.getItem('auth_token') ?? false;
     const { userSearch } = useParams();
     const [dropdownDegree, setDropdownDegree] = useState(0);
     const [language, setLanguage] = useState(localStorage.getItem('language') ?? navigator.language.split('-')[0]);

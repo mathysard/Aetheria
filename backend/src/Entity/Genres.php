@@ -16,6 +16,9 @@ class Genres
     #[ORM\Column(length: 255)]
     private ?string $name = null;
 
+    #[ORM\Column(length: 255)]
+    private ?string $value = null;
+
     #[ORM\Column(length: 1)]
     private ?string $status = null;
 
@@ -29,10 +32,10 @@ class Genres
     private ?\DateTime $createdAt = null;
 
     #[ORM\ManyToOne]
-    #[ORM\JoinColumn(nullable: false)]
+    #[ORM\JoinColumn(nullable: true)]
     private ?Users $createdBy = null;
 
-    #[ORM\Column]
+    #[ORM\Column(nullable: true)]
     private ?\DateTime $updatedAt = null;
 
     #[ORM\ManyToOne]
@@ -51,6 +54,18 @@ class Genres
     public function setName(string $name): static
     {
         $this->name = $name;
+
+        return $this;
+    }
+
+    public function getValue(): ?string
+    {
+        return $this->value;
+    }
+
+    public function setValue(string $value): static
+    {
+        $this->value = $value;
 
         return $this;
     }

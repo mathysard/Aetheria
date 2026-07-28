@@ -38,3 +38,13 @@ export const createUniqueId = () => {
 
     return id;
 }
+
+export const formDataToObject = (formData: FormData) => {
+    // Source - https://stackoverflow.com/a/46774073
+    // Posted by Wilt, modified by community. See post 'Timeline' for change history
+    // Retrieved 2026-05-16, License - CC BY-SA 4.0
+
+    var object = {};
+    formData.forEach((value, key) => object[key] = value);
+    return object;
+}

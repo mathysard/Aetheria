@@ -48,7 +48,7 @@ class Books
     #[ORM\JoinColumn(nullable: false)]
     private ?Users $createdBy = null;
 
-    #[ORM\Column]
+    #[ORM\Column(nullable: true)]
     private ?\DateTime $updatedAt = null;
 
     #[ORM\ManyToOne]

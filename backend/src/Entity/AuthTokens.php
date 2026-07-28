@@ -20,6 +20,10 @@ class AuthTokens
     #[ORM\Column]
     private ?\DateTime $validUntil = null;
 
+    #[ORM\ManyToOne]
+    #[ORM\JoinColumn(nullable: false)]
+    private ?Users $user = null;
+
     #[ORM\Column(length: 1)]
     private ?string $status = null;
 
@@ -33,10 +37,10 @@ class AuthTokens
     private ?\DateTime $createdAt = null;
 
     #[ORM\ManyToOne]
-    #[ORM\JoinColumn(nullable: false)]
+    #[ORM\JoinColumn(nullable: true)]
     private ?Users $createdBy = null;
 
-    #[ORM\Column]
+    #[ORM\Column(nullable: true)]
     private ?\DateTime $updatedAt = null;
 
     #[ORM\ManyToOne]
@@ -67,6 +71,18 @@ class AuthTokens
     public function setValidUntil(\DateTime $validUntil): static
     {
         $this->validUntil = $validUntil;
+
+        return $this;
+    }
+
+    public function getUser(): ?Users
+    {
+        return $this->user;
+    }
+
+    public function setUser(?Users $user): static
+    {
+        $this->user = $user;
 
         return $this;
     }
