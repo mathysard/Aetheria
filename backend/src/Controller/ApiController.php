@@ -10,6 +10,7 @@ use App\Repository\RolesRepository;
 use App\Repository\AuthTokensRepository;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpFoundation\ResponseHeaderBag;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -24,6 +25,12 @@ final class ApiController extends AbstractController
         private RolesRepository $rolesRepository,
         private AuthTokensRepository $authTokensRepository
     ) {}
+
+    #[Route('/profilePicture/{fileName}', name: 'api_profile_picture')]
+	public function downloadAttachedFile($fileName)
+	{
+        return $this->file($_ENV["BACKEND_PATH"] . '/images/profile_pictures/' . $fileName, $fileName, ResponseHeaderBag::DISPOSITION_INLINE);
+	}
 
     #[Route('/register', name: 'api_register')]
     public function apiRegister(Request $request): Response
@@ -167,7 +174,7 @@ final class ApiController extends AbstractController
         $user->setUserName($payload["username"]);
         $user->setEmail($payload["email"]);
         $user->setPassword(password_hash($payload["password"], PASSWORD_DEFAULT));
-        $user->setProfilePicture($_ENV["BACKEND_PATH"] . "/images/profile_pictures/default.jpg");
+        $user->setProfilePicture("default.jpg");
         $user->setStatus("N");
         $user->setIsActive(true);
         $user->setIsDeleted(false);
@@ -235,7 +242,8 @@ final class ApiController extends AbstractController
             "id" => $user->getId(),
             "displayName" => $user->getDisplayName(),
             "username" => $user->getUsername(),
-            "email" => $user->getEmail()
+            "email" => $user->getEmail(),
+            "profilePicture" => $user->getProfilePicture()
         ];
         $token = base64_encode(json_encode($token));
         
@@ -254,6 +262,32 @@ final class ApiController extends AbstractController
             'result' => true,
             'message' => "Vous êtes connecté !",
             'token' => $token
+        ]);
+    }
+
+    #[Route('/logout', name: 'api_logout')]
+    public function apiLogout(Request $request): Response
+    {
+        $payload = json_decode($request->getContent(), true);
+        $token = $this->authTokensRepository->findByTokenAndValidity($payload["token"]);
+        $date = new \DateTime();
+
+        if(!$token || ($token && $token->getValidUntil() < $date)) {
+            return new JsonResponse([
+                'result' => false,
+                'type' => 'tokenNotValid',
+                'message' => "Le token n'existe pas ou n'est plus valide."
+            ]);
+        }
+
+        $token->setValidUntil($date);
+
+        $this->entityManager->persist($token);
+        $this->entityManager->flush();
+
+        return new JsonResponse([
+            'result' => true,
+            'message' => "Vous êtes déconnecté !"
         ]);
     }
 

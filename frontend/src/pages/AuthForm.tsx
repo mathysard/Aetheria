@@ -17,6 +17,7 @@ interface FormInterface {
 
 const AuthForm = () => {
     const authState: "login"|"register" = window.location.pathname.split('/')[1].includes('login') ? 'login' : 'register';
+    const [formIsSubmitted, setFormIsSubmitted] = useState<boolean>(false);
     const [formErrors, setFormErrors] = useState<ErrorsInterface>(
         {
             "displayName": [],
@@ -158,6 +159,7 @@ const AuthForm = () => {
 
     const handleSubmit = (e: any) => {
         e.preventDefault();
+        setFormIsSubmitted(true);
 
         const target = e.target as HTMLFormElement;
         const formData = new FormData(target);
@@ -176,19 +178,24 @@ const AuthForm = () => {
                     .then(res => {
                         if(res.result === false && res.type === 'formErrors') {
                             setFormErrors(res.errors);
+                            setFormIsSubmitted(false);
                         }
     
                         if(res.result === false && res.type === 'userExists') {
                             toast.error(res.message);
+                            setFormIsSubmitted(false);
                         }
     
                         if(res.result === true) {
                             toast.success(res.message);
+                            setFormIsSubmitted(false);
                         }
                     })
                 } catch(error: any) {
                     toast.error(error);
                 }
+            } else {
+                setFormIsSubmitted(false);
             }
         } else {
             try {
@@ -200,6 +207,7 @@ const AuthForm = () => {
                 .then(res => {
                     if(res.result === false && (res.type === 'userNotExists' || res.type === 'passwordNotMatches')) {
                         toast.error(res.message);
+                        setFormIsSubmitted(false);
                     }
 
                     if(res.result === true) {
@@ -209,11 +217,13 @@ const AuthForm = () => {
                             localStorage.setItem('auth_token', res.token);
                         }
 
+                        setFormIsSubmitted(false);
                         window.location.href = "/";
                     }
                 })
             } catch(error: any) {
                 toast.error(error);
+                setFormIsSubmitted(false);
             }
         }
     }
@@ -333,7 +343,13 @@ const AuthForm = () => {
                                 )}
 
                                 <div>
-                                    <button type="submit" className="flex w-full justify-center rounded-md text-white cursor-pointer bg-blue-500 hover:bg-blue-600 active:bg-blue-800 px-3 py-1.5 text-sm/6 font-semibold text-blackfocus-visible:outline-2 focus-visible:outline-offset-2">{authState === "login" ? "Se connecter" : "S'inscrire"}</button>
+                                    <button
+                                        type="submit"
+                                        disabled={formIsSubmitted}
+                                        className="flex w-full justify-center rounded-md text-white cursor-pointer bg-blue-500 hover:bg-blue-600 active:bg-blue-800 px-3 py-1.5 text-sm/6 font-semibold text-blackfocus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:bg-blue-700"
+                                        >
+                                            {authState === "login" ? "Se connecter" : "S'inscrire"}
+                                        </button>
                                 </div>
                             </form>
 

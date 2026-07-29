@@ -44,7 +44,21 @@ export const formDataToObject = (formData: FormData) => {
     // Posted by Wilt, modified by community. See post 'Timeline' for change history
     // Retrieved 2026-05-16, License - CC BY-SA 4.0
 
-    var object = {};
+    var object: any = {};
     formData.forEach((value, key) => object[key] = value);
     return object;
+}
+
+// Source - https://stackoverflow.com/a/3710226
+// Posted by Gumbo, modified by community. See post 'Timeline' for change history
+// Retrieved 2026-07-30, License - CC BY-SA 4.0
+
+export const isJsonString = (str: string) => {
+    try {
+        JSON.parse(str);
+    } catch (e) {
+        return false;
+    }
+
+    return true;
 }

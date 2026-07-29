@@ -53,4 +53,16 @@ class AuthTokensRepository extends ServiceEntityRepository
                     ->getQuery()
                     ->getOneOrNullResult();
     }
+
+    public function findByTokenAndValidity(string $token)
+    {
+        $qb = $this->createQueryBuilder('at');
+
+        return $qb->andWhere('at.token = :token')
+                    ->setParameter('token', $token)
+                    ->andWhere('at.validUntil >= :validityDate')
+                    ->setParameter('validityDate', new \DateTime())
+                    ->getQuery()
+                    ->getOneOrNullResult();
+    }
 }
