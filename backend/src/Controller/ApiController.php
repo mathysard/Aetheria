@@ -5,15 +5,19 @@ namespace App\Controller;
 use App\Entity\Users;
 use App\Entity\UserRoles;
 use App\Entity\AuthTokens;
+use App\Entity\Books;
+use App\Entity\BookGenres;
 use App\Repository\UsersRepository;
 use App\Repository\RolesRepository;
 use App\Repository\AuthTokensRepository;
+use App\Repository\GenresRepository;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\ResponseHeaderBag;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Attribute\Route;
-use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\Serializer\SerializerInterface;
 use Doctrine\ORM\EntityManagerInterface;
 
 #[Route('/api')]
@@ -23,7 +27,9 @@ final class ApiController extends AbstractController
         private EntityManagerInterface $entityManager,
         private UsersRepository $usersRepository,
         private RolesRepository $rolesRepository,
-        private AuthTokensRepository $authTokensRepository
+        private AuthTokensRepository $authTokensRepository,
+        private GenresRepository $genresRepository,
+        private SerializerInterface $serializer
     ) {}
 
     #[Route('/profilePicture/{fileName}', name: 'api_profile_picture')]
@@ -291,15 +297,155 @@ final class ApiController extends AbstractController
         ]);
     }
 
-    #[Route('/createBook', name: 'api_create_book')]
-    public function apiCreateBook(Request $request): Response
+    #[Route('/genres', name: 'api_genres')]
+    public function apiGenres(): Response
     {
-        $payload = json_decode($request->getContent(), true);
-        $cover = $request->files->get('cover');
+        $genres = $this->genresRepository->findBy(["isActive" => true, "isDeleted" => false]);
 
-        header("Access-Control-Allow-Origin: *");
-        dd($request->files->all());
+        return new JsonResponse([
+            "genres" => $this->serializer->serialize($genres, 'json')
+        ]);
+    }
 
-        return new JsonResponse([]);
+    #[Route('/createBook/{screen}', name: 'api_create_book')]
+    public function apiCreateBook(Request $request, $screen = null): Response
+    {
+        $payload = $request->request->all();
+        // header("Access-Control-Allow-Origin: *");
+        // dd($payload);
+
+        $possibleScreens = ["book", "characters", "locations", "relations"];
+        if(!in_array($screen, $possibleScreens)) {
+            return new JsonResponse([
+                'result' => false,
+                'type' => 'screenNotValid',
+                'message' => "L'écran n'est pas valide."
+            ]);
+        }
+
+        if(!array_key_exists("token", $payload)) {
+            return new JsonResponse([
+                'result' => false,
+                'type' => 'noToken',
+                'message' => "Il manque un token."
+            ]);
+        }
+
+        $token = $this->authTokensRepository->findByTokenAndValidity($payload["token"]);
+        $date = new \DateTime();
+
+        if(!$token || ($token && $token->getValidUntil() < $date)) {
+            return new JsonResponse([
+                'result' => false,
+                'type' => 'tokenNotValid',
+                'message' => "Le token n'existe pas ou n'est plus valide."
+            ]);
+        } else {
+            $user = $token->getUser();
+            $token = $token->getToken();
+        }
+
+        if($screen === "book") {
+            $missingData = [];
+
+            if(!array_key_exists("title", $payload)) {
+                $missingData[] = "Il manque le titre du livre.";
+            }
+
+            if(!array_key_exists("genre", $payload)) {
+                $missingData[] = "Il manque le genre du livre.";
+            }
+
+            if(!array_key_exists("visibility", $payload)) {
+                $missingData[] = "Il manque la visiblité du livre.";
+            }
+
+            if(count($missingData) > 0) {
+                return new JsonResponse([
+                    'result' => false,
+                    'type' => 'invalidData',
+                    'message' => implode(" ", $missingData)
+                ]);
+            }
+
+            if(strlen($payload["title"]) > 255) {
+                return new JsonResponse([
+                    'result' => false,
+                    'type' => 'invalidData',
+                    'message' => "Le titre du livre dépasse 255 caractères."
+                ]);
+            }
+
+            if(strlen($payload["title"]) === 0) {
+                return new JsonResponse([
+                    'result' => false,
+                    'type' => 'invalidData',
+                    'message' => "Le titre du livre ne contient pas au moins 1 caractère."
+                ]);
+            }
+
+            if(!in_array($payload["visibility"], ["public", "unlisted", "private"])) {
+                return new JsonResponse([
+                    'result' => false,
+                    'type' => 'invalidData',
+                    'message' => "La visibilité du livre est invalide."
+                ]);
+            }
+
+            $genre = $this->genresRepository->find($payload["genre"]);
+
+            if($genre === null || $genre->isActive() === false || $genre->isDeleted() === true) {
+                return new JsonResponse([
+                    'result' => false,
+                    'type' => 'invalidData',
+                    'message' => "Le genre est invalide."
+                ]);
+            }
+
+            $cover = $request->files->get('cover');
+            $coverName = "";
+            if($cover) {
+                $tempPath = $cover->getRealPath();
+                $imageName = $cover->getClientOriginalName();
+                $coverName = uniqid() . "_" . $imageName;
+                $cover->move($_ENV["BACKEND_PATH"] . "/images/book_covers", $coverName);
+            }
+
+            $book = new Books();
+
+            $book->setTitle($payload["title"]);
+            $book->setCover($cover ? $coverName : null);
+            $book->setDescription(array_key_exists("description", $payload) ? $payload["description"] : null);
+            $book->setIsNsfw(array_key_exists("isNsfw", $payload) ? $payload["isNsfw"] === true : null);
+            $book->setVisibility(array_key_exists("visibility", $payload) ? $payload["visibility"] : null);
+            $book->setTriggerWarnings(array_key_exists("triggerWarnings", $payload) ? $payload["triggerWarnings"] : null);
+            $book->setStatus("N");
+            $book->setIsActive(true);
+            $book->setIsDeleted(false);
+            $book->setCreatedAt($date);
+            $book->setCreatedBy($user);
+
+            $this->entityManager->persist($book);
+            $this->entityManager->flush();
+
+            $bookGenre = new BookGenres();
+
+            $bookGenre->setBook($book);
+            $bookGenre->setGenre($genre);
+            $bookGenre->setStatus("N");
+            $bookGenre->setIsActive(true);
+            $bookGenre->setIsDeleted(false);
+            $bookGenre->setCreatedAt($date);
+            $bookGenre->setCreatedBy($user);
+
+            $this->entityManager->persist($bookGenre);
+            $this->entityManager->flush();
+
+            return new JsonResponse([
+                'result' => true,
+                'message' => "Livre créé avec succès !",
+                'bookId' => $book->getId()
+            ]);
+        }
     }
 }

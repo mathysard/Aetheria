@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState, type Ref, type RefObject } from 'react'
+import { Toaster, toast } from 'sonner';
 import Navbar from "../components/Navbar"
 import { createUniqueId } from '../utils';
 
@@ -85,6 +86,7 @@ interface BookFormInterface {
     bookTitleRef: Ref<HTMLInputElement | null>;
     bookDescriptionRef: Ref<HTMLTextAreaElement | null>;
     bookGenreRef: Ref<HTMLSelectElement | null>;
+    bookGenres: any;
     bookKeywordsRef: Ref<HTMLInputElement | null>;
     bookIsNsfwRef: Ref<HTMLInputElement | null>;
     bookTriggerWarningsRef: Ref<HTMLTextAreaElement | null>;
@@ -93,7 +95,7 @@ interface BookFormInterface {
     fetchIsActive: boolean;
 }
 
-const BookForm = ({bookTitleRef, bookDescriptionRef, bookGenreRef, bookKeywordsRef, bookIsNsfwRef, bookTriggerWarningsRef, bookVisibilityRef, bookFriendsOnlyRef, fetchIsActive}: BookFormInterface) => {
+const BookForm = ({bookTitleRef, bookDescriptionRef, bookGenreRef, bookGenres, bookKeywordsRef, bookIsNsfwRef, bookTriggerWarningsRef, bookVisibilityRef, bookFriendsOnlyRef, fetchIsActive}: BookFormInterface) => {
     const [triggerWarningsAreDisplayed, setTriggerWarningsAreDisplayed] = useState(false);
     const [friendsOnlyIsDisplayed, setFriendsOnlyIsDisplayed] = useState(false);
     const [titleIsMaxCharacters, setTitleIsMaxCharacters] = useState(false);
@@ -101,7 +103,10 @@ const BookForm = ({bookTitleRef, bookDescriptionRef, bookGenreRef, bookKeywordsR
     return (
         <>
             <div className="mb-6">
-                <label className="font-semibold text-base">Titre (0/255)</label>
+                <div className="flex">
+                    <label className="font-semibold text-base">Titre (0/255)</label>
+                    <p className="text-red-600">*</p>
+                </div>
                 <div className="my-1.5" />
                 <input
                     type="text"
@@ -120,7 +125,7 @@ const BookForm = ({bookTitleRef, bookDescriptionRef, bookGenreRef, bookKeywordsR
                         setTitleIsMaxCharacters(target.value.length >= 255);
 
                         const parentElement = target.parentElement as HTMLDivElement;
-                        parentElement.children[0].textContent = `Titre (${target.value.length}/255)`
+                        parentElement.children[0].children[0].textContent = `Titre (${target.value.length}/255)`
                     }}
                 />
             </div>
@@ -137,7 +142,10 @@ const BookForm = ({bookTitleRef, bookDescriptionRef, bookGenreRef, bookKeywordsR
                 />
             </div>
             <div className="mb-6">
-                <label className="font-semibold text-base">Genre</label>
+                <div className="flex">
+                    <label className="font-semibold text-base">Genre</label>
+                    <p className="text-red-600">*</p>
+                </div>
                 <div className="my-1.5" />
                 <select
                     id="bookGenre"
@@ -146,7 +154,9 @@ const BookForm = ({bookTitleRef, bookDescriptionRef, bookGenreRef, bookKeywordsR
                     disabled={fetchIsActive}
                     className="bg-neutral-secondary-medium border-2 border-gray-400 text-heading text-sm rounded-lg focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs placeholder:text-body"
                 >
-                    <option></option>
+                    {bookGenres.map((genre: any) => (
+                        <option value={genre.id}>{genre.name}</option>
+                    ))}
                 </select>
             </div>
             {/* <div className="mb-6">
@@ -1426,11 +1436,13 @@ const LocationsForm = ({locations, setLocations, locationsDivRef, locationFormRe
 
 const CreateBook = () => {
     const [activeScreen, setActiveScreen] = useState<"book"|"characters"|"relations"|"locations"|"chapters">("book");
+    const [genres, setGenres] = useState([]);
     const [cover, setCover] = useState<any>(null);
     const [coverBase64, setCoverBase64] = useState<string>();
-    const [fetchState, setFetchState] = useState<"book"|"characters"|"relations"|"locations">("characters");
+    // const [fetchState, setFetchState] = useState<"book"|"characters"|"relations"|"locations">("characters");
     const [fetchIsActive, setFetchIsActive] = useState(false);
-    const presentationOnLocal = useState(false); // Will be removed eventually, it's just for my classes.
+    const [bookWasCreated, setBookWasCreated] = useState(false);
+    const [bookId, setBookId] = useState(null);
 
     const bookTitleRef: Ref<HTMLInputElement | null> = useRef(null);
     const bookDescriptionRef: Ref<HTMLTextAreaElement | null> = useRef(null);
@@ -1464,20 +1476,33 @@ const CreateBook = () => {
     
     const handleSubmit = () => {
         const formData = new FormData();
+        formData.append('token', localStorage.getItem("auth_token") as string)
 
-        switch(fetchState) {
+        switch(activeScreen) {
             case "book":
                 if(cover) {
                     formData.append('cover', cover, cover.name)
                 }
-                formData.append('title', bookTitleRef.current?.value as string);
-                formData.append('description', bookDescriptionRef.current?.value as string);
+
+                if(bookTitleRef.current?.value !== null) {
+                    formData.append('title', bookTitleRef.current?.value as string);
+                }
+
+                if(bookDescriptionRef.current?.value !== null) {
+                    formData.append('description', bookDescriptionRef.current?.value as string);
+                }
+
                 formData.append('genre', bookGenreRef.current?.value as string);
+
                 formData.append('isNsfw', (bookIsNsfwRef.current as HTMLInputElement).checked.toString());
-                formData.append('triggerWarnings', bookTriggerWarningsRef.current?.value as string);
+
+                if(bookTriggerWarningsRef.current?.value !== null) {
+                    formData.append('triggerWarnings', bookTriggerWarningsRef.current?.value as string);
+                }
+
                 formData.append('visibility', bookVisibilityRef.current?.value as string);
-                formData.append('friendsOnly', (bookFriendsOnlyRef.current as HTMLInputElement).checked.toString());
-                formData.append('characters', JSON.stringify(characters));
+
+                // formData.append('friendsOnly', (bookFriendsOnlyRef.current as HTMLInputElement).checked.toString());
                 break;
             case "characters":
                 characters.map(character => {
@@ -1500,19 +1525,28 @@ const CreateBook = () => {
                 break;
         }
 
-        if(presentationOnLocal) {
-            fetch("https://127.0.0.1:8000/api/createBook", {
-                method: 'POST',
-                body: formData
-            })
-            .then(res => res.ok ? res.json() : null)
-            .then(res => {
-                console.log(res);
-            })
-            .catch(error => {
-                console.error(error);
-            })
-        }
+        fetch(`https://127.0.0.1:8000/api/createBook/${activeScreen}`, {
+            method: 'POST',
+            body: formData
+        })
+        .then(res => res.ok ? res.json() : null)
+        .then(res => {
+            if(activeScreen === "book" && res.result === true) {
+                setBookWasCreated(true);
+                setBookId(res.bookId);
+            }
+
+            if(res.result === false) {
+                toast.error(res.message);
+            }
+
+            if(res.result === true) {
+                toast.success(res.message);
+            }
+        })
+        .catch(error => {
+            console.error(error);
+        })
     }
 
     document.onkeydown = (e: any) => {
@@ -1524,8 +1558,20 @@ const CreateBook = () => {
         }
     }
 
+    useEffect(() => {
+        fetch("https://127.0.0.1:8000/api/genres")
+        .then(res => res.ok ? res.json() : null)
+        .then(res => {
+            setGenres(JSON.parse(res.genres));
+        })
+        .catch(error => {
+            console.error(error);
+        })
+    }, [])
+
     return (
         <>
+            <Toaster richColors position='top-right' />
             <div className="sticky top-0">
                 <Navbar />
             </div>
@@ -1560,57 +1606,68 @@ const CreateBook = () => {
                     <div className="ml-[8%] px-8 pt-4 bg-white shadow-xl">
                         <div className="flex h-max border-b-2 mb-4 border-gray-400">
                             <p
-                                className={`text-2xl font-semibold mb-4 mr-16 ${activeScreen === "book" ? "text-blue-400" : ""} ${fetchIsActive ? "cursor-not-allowed" : "cursor-pointer"} ${fetchIsActive ? "hover:text-red-400" : "hover:text-blue-400"} ${fetchIsActive ? "" : "active:text-blue-600"}`}
+                                className={`text-2xl font-semibold mb-4 mr-16 ${activeScreen === "book" ? "text-blue-400" : ""} ${fetchIsActive ? "cursor-not-allowed" : "cursor-pointer"} ${fetchIsActive || bookWasCreated === false ? "hover:text-red-400" : "hover:text-blue-400"} ${fetchIsActive || bookWasCreated === false ? "active:text-red-600" : "active:text-blue-600"} ${bookWasCreated !== true ? "hover:cursor-not-allowed" : ""}`}
                                 onClick={() => {
-                                    if(!fetchIsActive) {
-                                        setActiveScreen("book")
+                                    if(bookWasCreated === true) {
+                                        if(!fetchIsActive) {
+                                            setActiveScreen("book")
+                                        }
                                     }
                                 }}
                             >
                                 Livre
                             </p>
                             <p
-                                className={`text-2xl font-semibold mb-4 mr-16 ${activeScreen === "characters" ? "text-blue-400" : ""} ${fetchIsActive ? "cursor-not-allowed" : "cursor-pointer"} ${fetchIsActive ? "hover:text-red-400" : "hover:text-blue-400"} ${fetchIsActive ? "" : "active:text-blue-600"}`}
+                                className={`text-2xl font-semibold mb-4 mr-16 ${activeScreen === "characters" ? "text-blue-400" : ""} ${fetchIsActive ? "cursor-not-allowed" : "cursor-pointer"} ${fetchIsActive || bookWasCreated === false ? "hover:text-red-400" : "hover:text-blue-400"} ${fetchIsActive || bookWasCreated === false ? "active:text-red-600" : "active:text-blue-600"} ${bookWasCreated !== true ? "hover:cursor-not-allowed" : ""}`}
                                 onClick={() => {
-                                    if(!fetchIsActive) {
-                                        setActiveScreen("characters")
+                                    if(bookWasCreated === true) {
+                                        if(!fetchIsActive) {
+                                            setActiveScreen("characters")
+                                        }
                                     }
                                 }}
                             >
                                 Personnages
                             </p>
                             <p
-                                className={`text-2xl font-semibold mb-4 mr-16 ${activeScreen === "relations" ? "text-blue-400" : ""} ${fetchIsActive ? "cursor-not-allowed" : "cursor-pointer"} ${fetchIsActive ? "hover:text-red-400" : "hover:text-blue-400"} ${fetchIsActive ? "" : "active:text-blue-600"}`}
+                                className={`text-2xl font-semibold mb-4 mr-16 ${activeScreen === "relations" ? "text-blue-400" : ""} ${fetchIsActive ? "cursor-not-allowed" : "cursor-pointer"} ${fetchIsActive || bookWasCreated === false ? "hover:text-red-400" : "hover:text-blue-400"} ${fetchIsActive || bookWasCreated === false ? "active:text-red-600" : "active:text-blue-600"} ${bookWasCreated !== true ? "hover:cursor-not-allowed" : ""}`}
                                 onClick={() => {
-                                    if(!fetchIsActive) {
-                                        setActiveScreen("relations")
+                                    if(bookWasCreated === true) {
+                                        if(!fetchIsActive) {
+                                            setActiveScreen("relations")
+                                        }
                                     }
                                 }}
                             >
                                 Relations
                             </p>
                             <p
-                                className={`text-2xl font-semibold mb-4 mr-16 ${activeScreen === "locations" ? "text-blue-400" : ""} ${fetchIsActive ? "cursor-not-allowed" : "cursor-pointer"} ${fetchIsActive ? "hover:text-red-400" : "hover:text-blue-400"} ${fetchIsActive ? "" : "active:text-blue-600"}`}
+                                className={`text-2xl font-semibold mb-4 mr-16 ${activeScreen === "locations" ? "text-blue-400" : ""} ${fetchIsActive ? "cursor-not-allowed" : "cursor-pointer"} ${fetchIsActive || bookWasCreated === false ? "hover:text-red-400" : "hover:text-blue-400"} ${fetchIsActive || bookWasCreated === false ? "active:text-red-600" : "active:text-blue-600"} ${bookWasCreated !== true ? "hover:cursor-not-allowed" : ""}`}
                                 onClick={() => {
-                                    if(!fetchIsActive) {
-                                        setActiveScreen("locations")
+                                    if(bookWasCreated === true) {
+                                        if(!fetchIsActive) {
+                                            setActiveScreen("locations")
+                                        }
                                     }
                                 }}
                             >
                                 Lieux
                             </p>
                             <p
-                                className={`text-2xl font-semibold mb-4 ${activeScreen === "chapters" ? "text-blue-400" : ""} ${fetchIsActive ? "cursor-not-allowed" : "cursor-pointer"} ${fetchIsActive ? "hover:text-red-400" : "hover:text-blue-400"} ${fetchIsActive ? "" : "active:text-blue-600"}`}
+                                className={`text-2xl font-semibold mb-4 ${activeScreen === "chapters" ? "text-blue-400" : ""} ${fetchIsActive ? "cursor-not-allowed" : "cursor-pointer"} ${fetchIsActive || bookWasCreated === false ? "hover:text-red-400" : "hover:text-blue-400"} ${fetchIsActive || bookWasCreated === false ? "active:text-red-600" : "active:text-blue-600"} ${bookWasCreated !== true ? "hover:cursor-not-allowed" : ""}`}
                                 onClick={() => {
-                                    if(!fetchIsActive) {
-                                        setActiveScreen("chapters")
+                                    if(bookWasCreated === true) {
+                                        if(!fetchIsActive) {
+                                            setActiveScreen("chapters")
+                                        }
                                     }
                                 }}
                             >
                                 Chapitres
                             </p>
                         </div>
-                        <i><p className="text-center mb-4">Les données qui seront sauvegardées sont celles de l'écran "{frenchScreens[activeScreen]}" uniquement.</p></i>
+                        <i><p className={"text-center" + (bookWasCreated === true ? " mb-4" : "")}>Les données qui seront sauvegardées sont celles de l'écran "{frenchScreens[activeScreen]}" uniquement.</p></i>
+                        {bookWasCreated === false && <p className="text-center text-red-600 font-semibold mb-4">⛔ Veuillez créer les informations de l'écran "Livre" avant de poursuivre.</p>}
                         <div className={activeScreen !== "book" ? "hidden" : ""}>
                             <BookForm
                                 bookTitleRef={bookTitleRef}
@@ -1621,6 +1678,7 @@ const CreateBook = () => {
                                 bookTriggerWarningsRef={bookTriggerWarningsRef}
                                 bookVisibilityRef={bookVisibilityRef}
                                 bookFriendsOnlyRef={bookFriendsOnlyRef}
+                                bookGenres={genres}
                                 fetchIsActive={fetchIsActive}
                             />
                         </div>
