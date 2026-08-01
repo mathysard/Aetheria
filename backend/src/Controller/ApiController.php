@@ -2,23 +2,34 @@
 
 namespace App\Controller;
 
-use App\Entity\Users;
-use App\Entity\UserRoles;
 use App\Entity\AuthTokens;
-use App\Entity\Books;
 use App\Entity\BookGenres;
-use App\Repository\UsersRepository;
-use App\Repository\RolesRepository;
+use App\Entity\Books;
+use App\Entity\CharacterRelations;
+use App\Entity\Characters;
+use App\Entity\CharacterUserFields;
+use App\Entity\Locations;
+use App\Entity\LocationUserFields;
+use App\Entity\UserRoles;
+use App\Entity\Users;
 use App\Repository\AuthTokensRepository;
+use App\Repository\BooksRepository;
+use App\Repository\CharacterRelationsRepository;
+use App\Repository\CharactersRepository;
+use App\Repository\CharacterUserFieldsRepository;
 use App\Repository\GenresRepository;
+use App\Repository\LocationsRepository;
+use App\Repository\LocationUserFieldsRepository;
+use App\Repository\RolesRepository;
+use App\Repository\UsersRepository;
+use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\ResponseHeaderBag;
-use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Serializer\SerializerInterface;
-use Doctrine\ORM\EntityManagerInterface;
 
 #[Route('/api')]
 final class ApiController extends AbstractController
@@ -29,6 +40,12 @@ final class ApiController extends AbstractController
         private RolesRepository $rolesRepository,
         private AuthTokensRepository $authTokensRepository,
         private GenresRepository $genresRepository,
+        private BooksRepository $booksRepository,
+        private CharactersRepository $charactersRepository,
+        private CharacterUserFieldsRepository $characterUserFieldsRepository,
+        private LocationsRepository $locationsRepository,
+        private CharacterRelationsRepository $characterRelationsRepository,
+        private LocationUserFieldsRepository $locationUserFieldsRepository,
         private SerializerInterface $serializer
     ) {}
 
@@ -312,7 +329,7 @@ final class ApiController extends AbstractController
     {
         $payload = $request->request->all();
         // header("Access-Control-Allow-Origin: *");
-        // dd($payload);
+        // dd(json_decode($payload["relations"]));
 
         $possibleScreens = ["book", "characters", "locations", "relations"];
         if(!in_array($screen, $possibleScreens)) {
@@ -445,6 +462,407 @@ final class ApiController extends AbstractController
                 'result' => true,
                 'message' => "Livre créé avec succès !",
                 'bookId' => $book->getId()
+            ]);
+        }
+
+        if($screen === "characters") {
+            if(!array_key_exists("characters", $payload)) {
+                return new JsonResponse([
+                    'result' => false,
+                    'type' => 'invalidData',
+                    'message' => "Il manque les personnages."
+                ]);
+            }
+
+            if(!array_key_exists("bookId", $payload)) {
+                return new JsonResponse([
+                    'result' => false,
+                    'type' => 'invalidData',
+                    'message' => "Il manque l'id du livre."
+                ]);
+            }
+
+            if(json_validate($payload["characters"] === false)) {
+                return new JsonResponse([
+                    'result' => false,
+                    'type' => 'invalidData',
+                    'message' => "Les personnages ne sont pas dans un format JSON."
+                ]);
+            }
+
+            if($this->booksRepository->find($payload["bookId"]) === null) {
+                return new JsonResponse([
+                    'result' => false,
+                    'type' => 'invalidData',
+                    'message' => "L'id du livre n'a pas été trouvé dans la base de données."
+                ]);
+            }
+
+            foreach(json_decode($payload["characters"], true) as $character) {
+                $missingData = [];
+    
+                if(!array_key_exists("firstName", $character)) {
+                    $missingData[] = "Il manque le prénom du personnage.";
+                }
+    
+                if(!array_key_exists("lastName", $character)) {
+                    $missingData[] = "Il manque le prénom du personnage.";
+                }
+
+                if(!array_key_exists("uuid", $character)) {
+                    $missingData[] = "Il manque le UUID du personnage.";
+                }
+    
+                if(count($missingData) > 0) {
+                    return new JsonResponse([
+                        'result' => false,
+                        'type' => 'invalidData',
+                        'message' => implode(" ", $missingData)
+                    ]);
+                }
+                
+                if(strlen($character["uuid"]) > 255) {
+                    return new JsonResponse([
+                        'result' => false,
+                        'type' => 'invalidData',
+                        'message' => "Le UUID du personnage dépasse 255 caractères."
+                    ]);
+                }
+    
+                if(strlen($character["uuid"]) === 0) {
+                    return new JsonResponse([
+                        'result' => false,
+                        'type' => 'invalidData',
+                        'message' => "Le UUID du personnage ne contient pas au moins 1 caractère."
+                    ]);
+                }
+
+                $image = $request->files->get($character["uuid"]);
+                $imageName = "";
+                if($image) {
+                    $tempPath = $image->getRealPath();
+                    $imageName = $image->getClientOriginalName();
+                    $imageName = uniqid() . "_" . $imageName;
+                    $image->move($_ENV["BACKEND_PATH"] . "/images/characters", $imageName);
+                }
+
+                $characterEntity = new Characters();
+                $characterInDb = $this->charactersRepository->findOneBy(["uuid" => $character["uuid"]]);
+                if($characterInDb !== null) {
+                    $characterEntity = $characterInDb;
+                }
+
+                $characterEntity->setUuid($character["uuid"]);
+                $characterEntity->setBook($this->booksRepository->find($payload["bookId"]));
+                $characterEntity->setFirstName($character["firstName"]);
+                $characterEntity->setMiddleNames(array_key_exists("middleNames", $character) ? $character["middleNames"] : null);
+                $characterEntity->setLastName($character["lastName"]);
+                $characterEntity->setNickname(array_key_exists("nickname", $character) ? $character["nickname"] : null);
+                $characterEntity->setImage($image ? $imageName : null);
+                $characterEntity->setGender(array_key_exists("gender", $character) ? $character["gender"] : null);
+                $characterEntity->setPronouns(array_key_exists("pronouns", $character) ? $character["pronouns"] : null);
+                $characterEntity->setRace(array_key_exists("race", $character) ? $character["race"] : null);
+                $characterEntity->setAge(array_key_exists("age", $character) ? $character["age"] : null);
+                $characterEntity->setStatus("N");
+                $characterEntity->setIsActive(true);
+                $characterEntity->setIsDeleted(false);
+                $characterEntity->setCreatedAt($date);
+                $characterEntity->setCreatedBy($user);
+
+                $this->entityManager->persist($characterEntity);
+                $this->entityManager->flush();
+
+                if(count($character["userFields"]) > 0) {
+                    foreach($character["userFields"] as $userField) {
+                        $characterUserField = new CharacterUserFields();
+                        $characterUserFieldInDb = $this->characterUserFieldsRepository->findOneBy(["uuid" => $userField["uuid"]]);
+                        if($characterUserFieldInDb !== null) {
+                            $characterEntity = $characterUserFieldInDb;
+                        }
+        
+                        $characterUserField->setUuid($userField["uuid"]);
+                        $characterUserField->setBookCharacter($characterEntity);
+                        $characterUserField->setName($userField["label"]);
+                        $characterUserField->setContent($userField["value"]);
+                        $characterUserField->setStatus("N");
+                        $characterUserField->setIsActive(true);
+                        $characterUserField->setIsDeleted(false);
+                        $characterUserField->setCreatedAt($date);
+                        $characterUserField->setCreatedBy($user);
+
+                        $this->entityManager->persist($characterUserField);
+                        $this->entityManager->flush();
+                    }
+                }
+            }
+
+            return new JsonResponse([
+                'result' => true,
+                'message' => "Personnages créés avec succès !",
+            ]);
+        }
+
+        if($screen === "relations") {
+            $missingData = [];
+
+            if(!array_key_exists("relations", $payload)) {
+                $missingData[] = "Il manque les relations.";
+            }
+
+            if(!array_key_exists("bookId", $payload)) {
+                $missingData[] = "Il manque l'ID' du livre.";
+            }
+
+            if(json_validate($payload["relations"] === false)) {
+                return new JsonResponse([
+                    'result' => false,
+                    'type' => 'invalidData',
+                    'message' => "Les relations ne sont pas dans un format JSON."
+                ]);
+            }
+
+            if($this->booksRepository->find($payload["bookId"]) === null) {
+                return new JsonResponse([
+                    'result' => false,
+                    'type' => 'invalidData',
+                    'message' => "L'id du livre n'a pas été trouvé dans la base de données."
+                ]);
+            }
+
+            if(count($missingData) > 0) {
+                return new JsonResponse([
+                    'result' => false,
+                    'type' => 'invalidData',
+                    'message' => implode(" ", $missingData)
+                ]);
+            }
+
+            foreach(json_decode($payload["relations"], true) as $relation) {
+                if(!array_key_exists("characterOne", $relation)) {
+                    $missingData[] = "Il manque le premier personnage.";
+                }
+
+                if(!array_key_exists("characterTwo", $relation)) {
+                    $missingData[] = "Il manque le deuxième personnage.";
+                }
+
+                if(json_validate($relation["characterOne"] === false)) {
+                    return new JsonResponse([
+                        'result' => false,
+                        'type' => 'invalidData',
+                        'message' => "Le premier personnage n'est pas dans un format JSON."
+                    ]);
+                }
+
+                if(json_validate($relation["characterTwo"] === false)) {
+                    return new JsonResponse([
+                        'result' => false,
+                        'type' => 'invalidData',
+                        'message' => "Le deuxième personnage n'est pas dans un format JSON."
+                    ]);
+                }
+
+                $characterOne = $this->charactersRepository->findOneBy(["uuid" => $relation["characterOne"]["uuid"]]);
+                $characterTwo = $this->charactersRepository->findOneBy(["uuid" => $relation["characterTwo"]["uuid"]]);
+
+                if($characterOne === null) {
+                    return new JsonResponse([
+                        'result' => false,
+                        'type' => 'invalidData',
+                        'message' => "L'id du premier personnage n'a pas été trouvé dans la base de données."
+                    ]);
+                }
+
+                if($characterTwo === null) {
+                    return new JsonResponse([
+                        'result' => false,
+                        'type' => 'invalidData',
+                        'message' => "L'id du deuxième personnage n'a pas été trouvé dans la base de données."
+                    ]);
+                }
+
+                if(strlen($relation["label"]) > 255) {
+                    return new JsonResponse([
+                        'result' => false,
+                        'type' => 'invalidData',
+                        'message' => "Le libellé de la relation dépasse 255 caractères."
+                    ]);
+                }
+    
+                if(strlen($relation["label"]) === 0) {
+                    return new JsonResponse([
+                        'result' => false,
+                        'type' => 'invalidData',
+                        'message' => "Le libellé de la relation ne contient pas au moins 1 caractère."
+                    ]);
+                }
+    
+                $characterRelation = new CharacterRelations();
+                $characterRelationInDb = $this->characterRelationsRepository->findOneBy(["uuid" => $relation["uuid"]]);
+                if($characterRelationInDb !== null) {
+                    $characterRelationEntity = $characterRelationInDb;
+                }
+
+                $characterRelation->setUuid($relation["uuid"]);
+                $characterRelation->setFirstCharacter($characterOne);
+                $characterRelation->setSecondCharacter($characterTwo);
+                $characterRelation->setRelationLabel($relation["label"]);
+                $characterRelation->setStatus("N");
+                $characterRelation->setIsActive(true);
+                $characterRelation->setIsDeleted(false);
+                $characterRelation->setCreatedAt($date);
+                $characterRelation->setCreatedBy($user);
+    
+                $this->entityManager->persist($characterRelation);
+                $this->entityManager->flush();
+            }
+
+            return new JsonResponse([
+                'result' => true,
+                'message' => "Relations créées avec succès !",
+            ]);
+        }
+
+        if($screen === "locations") {
+            if(!array_key_exists("locations", $payload)) {
+                return new JsonResponse([
+                    'result' => false,
+                    'type' => 'invalidData',
+                    'message' => "Il manque les lieux."
+                ]);
+            }
+
+            if(!array_key_exists("bookId", $payload)) {
+                return new JsonResponse([
+                    'result' => false,
+                    'type' => 'invalidData',
+                    'message' => "Il manque l'id du livre."
+                ]);
+            }
+
+            if(json_validate($payload["locations"] === false)) {
+                return new JsonResponse([
+                    'result' => false,
+                    'type' => 'invalidData',
+                    'message' => "Les lieux ne sont pas dans un format JSON."
+                ]);
+            }
+
+            if($this->booksRepository->find($payload["bookId"]) === null) {
+                return new JsonResponse([
+                    'result' => false,
+                    'type' => 'invalidData',
+                    'message' => "L'id du livre n'a pas été trouvé dans la base de données."
+                ]);
+            }
+
+            foreach(json_decode($payload["locations"], true) as $location) {
+                $missingData = [];
+    
+                if(!array_key_exists("name", $location)) {
+                    $missingData[] = "Il manque le nom du lieu.";
+                }
+
+                if(!array_key_exists("uuid", $location)) {
+                    $missingData[] = "Il manque le UUID du lieu.";
+                }
+    
+                if(count($missingData) > 0) {
+                    return new JsonResponse([
+                        'result' => false,
+                        'type' => 'invalidData',
+                        'message' => implode(" ", $missingData)
+                    ]);
+                }
+                
+                if(strlen($location["uuid"]) > 255) {
+                    return new JsonResponse([
+                        'result' => false,
+                        'type' => 'invalidData',
+                        'message' => "Le UUID du lieu dépasse 255 caractères."
+                    ]);
+                }
+    
+                if(strlen($location["uuid"]) === 0) {
+                    return new JsonResponse([
+                        'result' => false,
+                        'type' => 'invalidData',
+                        'message' => "Le UUID du lieu ne contient pas au moins 1 caractère."
+                    ]);
+                }
+
+                if(strlen($location["name"]) > 255) {
+                    return new JsonResponse([
+                        'result' => false,
+                        'type' => 'invalidData',
+                        'message' => "Le nom du lieu dépasse 255 caractères."
+                    ]);
+                }
+    
+                if(strlen($location["name"]) === 0) {
+                    return new JsonResponse([
+                        'result' => false,
+                        'type' => 'invalidData',
+                        'message' => "Le nom du lieu ne contient pas au moins 1 caractère."
+                    ]);
+                }
+
+                $image = $request->files->get($location["uuid"]);
+                $imageName = "";
+                if($image) {
+                    $tempPath = $image->getRealPath();
+                    $imageName = $image->getClientOriginalName();
+                    $imageName = uniqid() . "_" . $imageName;
+                    $image->move($_ENV["BACKEND_PATH"] . "/images/locations", $imageName);
+                }
+
+                $locationEntity = new Locations();
+                $locationInDb = $this->locationsRepository->findOneBy(["uuid" => $location["uuid"]]);
+                if($locationInDb !== null) {
+                    $locationEntity = $locationInDb;
+                }
+
+                $locationEntity->setUuid($location["uuid"]);
+                $locationEntity->setBook($this->booksRepository->find($payload["bookId"]));
+                $locationEntity->setName($location["name"]);
+                $locationEntity->setDescription(array_key_exists("description", $location) ? $location["description"] : null);
+                $locationEntity->setImage($image ? $imageName : null);
+                $locationEntity->setStatus("N");
+                $locationEntity->setIsActive(true);
+                $locationEntity->setIsDeleted(false);
+                $locationEntity->setCreatedAt($date);
+                $locationEntity->setCreatedBy($user);
+
+                $this->entityManager->persist($locationEntity);
+                $this->entityManager->flush();
+
+                if(count($location["userFields"]) > 0) {
+                    foreach($location["userFields"] as $userField) {
+                        $locationUserField = new LocationUserFields();
+                        $locationUserFieldInDb = $this->locationUserFieldsRepository->findOneBy(["uuid" => $userField["uuid"]]);
+                        if($locationUserFieldInDb !== null) {
+                            $locationEntity = $locationUserFieldInDb;
+                        }
+        
+                        $locationUserField->setUuid($userField["uuid"]);
+                        $locationUserField->setBookLocation($locationEntity);
+                        $locationUserField->setName($userField["label"]);
+                        $locationUserField->setContent($userField["value"]);
+                        $locationUserField->setStatus("N");
+                        $locationUserField->setIsActive(true);
+                        $locationUserField->setIsDeleted(false);
+                        $locationUserField->setCreatedAt($date);
+                        $locationUserField->setCreatedBy($user);
+
+                        $this->entityManager->persist($locationUserField);
+                        $this->entityManager->flush();
+                    }
+                }
+            }
+
+            return new JsonResponse([
+                'result' => true,
+                'message' => "Lieux créés avec succès !",
             ]);
         }
     }

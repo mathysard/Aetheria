@@ -1442,7 +1442,7 @@ const CreateBook = () => {
     // const [fetchState, setFetchState] = useState<"book"|"characters"|"relations"|"locations">("characters");
     const [fetchIsActive, setFetchIsActive] = useState(false);
     const [bookWasCreated, setBookWasCreated] = useState(false);
-    const [bookId, setBookId] = useState(null);
+    const [bookId, setBookId] = useState(0);
 
     const bookTitleRef: Ref<HTMLInputElement | null> = useRef(null);
     const bookDescriptionRef: Ref<HTMLTextAreaElement | null> = useRef(null);
@@ -1511,6 +1511,7 @@ const CreateBook = () => {
                     }
                 })
                 formData.append('characters', JSON.stringify(characters));
+                formData.append('bookId', bookId as any);
                 break;
             case "locations":
                 locations.map(location => {
@@ -1519,9 +1520,11 @@ const CreateBook = () => {
                     }
                 })
                 formData.append('locations', JSON.stringify(locations));
+                formData.append('bookId', bookId as any);
                 break;
             case "relations":
                 formData.append('relations', JSON.stringify(relations));
+                formData.append('bookId', bookId as any);
                 break;
         }
 
