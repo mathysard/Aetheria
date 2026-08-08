@@ -120,7 +120,7 @@ const App = () => {
                 />
 
                 <Route
-                    path="/book/:bookId/chapter/create"
+                    path="/book/:bookId/chapter/handle/:chapterId"
                     element={<CreateChapter />}
                 />
 

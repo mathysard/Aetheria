@@ -53,13 +53,13 @@ function Toast({state, text}: PropsInterface) {
         )
     }
 
-    const [visible, setVisible] = useState(false);
+    const [visible, setVisible] = useState(true);
 
-    useEffect(() => {
-        setVisible(true);
-        const timer = setTimeout(() => setVisible(false), 5000);
-        return () => clearTimeout(timer);
-    }, []);
+    // useEffect(() => {
+    //     setVisible(true);
+    //     const timer = setTimeout(() => setVisible(false), 5000);
+    //     return () => clearTimeout(timer);
+    // }, []);
 
     return (
         <div style={{ backgroundColor: toastBg[state] }} className={`bg-red-200 px-6 py-4 my-4 rounded-md text-lg flex items-center mx-auto max-w-lg transition-all duration-300 ease-in-out ${visible ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-5"}`}>

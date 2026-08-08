@@ -5,6 +5,7 @@ namespace App\Controller;
 use App\Entity\AuthTokens;
 use App\Entity\BookGenres;
 use App\Entity\Books;
+use App\Entity\Chapters;
 use App\Entity\CharacterRelations;
 use App\Entity\Characters;
 use App\Entity\CharacterUserFields;
@@ -15,6 +16,7 @@ use App\Entity\Users;
 use App\Repository\AuthTokensRepository;
 use App\Repository\BooksRepository;
 use App\Repository\CharacterRelationsRepository;
+use App\Repository\ChaptersRepository;
 use App\Repository\CharactersRepository;
 use App\Repository\CharacterUserFieldsRepository;
 use App\Repository\GenresRepository;
@@ -46,13 +48,20 @@ final class ApiController extends AbstractController
         private LocationsRepository $locationsRepository,
         private CharacterRelationsRepository $characterRelationsRepository,
         private LocationUserFieldsRepository $locationUserFieldsRepository,
+        private ChaptersRepository $chaptersRepository,
         private SerializerInterface $serializer
     ) {}
 
     #[Route('/profilePicture/{fileName}', name: 'api_profile_picture')]
-	public function downloadAttachedFile($fileName)
+	public function apiProfilePicture($fileName)
 	{
         return $this->file($_ENV["BACKEND_PATH"] . '/images/profile_pictures/' . $fileName, $fileName, ResponseHeaderBag::DISPOSITION_INLINE);
+	}
+
+    #[Route('/bookCover/{fileName}', name: 'api_book_cover')]
+	public function apiBookCover($fileName)
+	{
+        return $this->file($_ENV["BACKEND_PATH"] . '/images/book_covers/' . $fileName, $fileName, ResponseHeaderBag::DISPOSITION_INLINE);
 	}
 
     #[Route('/register', name: 'api_register')]
@@ -865,5 +874,335 @@ final class ApiController extends AbstractController
                 'message' => "Lieux créés avec succès !",
             ]);
         }
+    }
+
+    #[Route('/book/{bookId}/chapter/handle/{chapterId}', name: 'api_handle_chapter')]
+    public function apiHandleChapter(Request $request, $bookId = null, $chapterId = null): Response
+    {
+        $payload = $request->request->all();
+
+        $token = $this->authTokensRepository->findByTokenAndValidity($payload["token"]);
+        $date = new \DateTime();
+
+        if(!$token || ($token && $token->getValidUntil() < $date)) {
+            return new JsonResponse([
+                'result' => false,
+                'type' => 'tokenNotValid',
+                'message' => "Le token n'existe pas ou n'est plus valide."
+            ]);
+        } else {
+            $user = $token->getUser();
+            $token = $token->getToken();
+        }
+
+        $book = $this->booksRepository->find($bookId);
+
+        if(!$book) {
+            return new JsonResponse([
+                'result' => false,
+                'type' => 'bookNotExist',
+                'message' => "Le livre n'existe pas."
+            ]);
+        }
+
+        $chapter = new Chapters();
+        if($chapterId !== "create") {
+            $chapter = $this->chaptersRepository->find($chapterId);
+
+            if(!$chapter) {
+                return new JsonResponse([
+                    'result' => false,
+                    'type' => 'chapterNotExist',
+                    'message' => "Le chapitre n'existe pas."
+                ]);
+            }
+        }
+
+        $chapter->setBook($book);
+        $chapter->setTitle($payload["title"]);
+        $chapter->setSummary($payload["summary"]);
+        $chapter->setContent($payload["content"]);
+
+        if($chapterId === "create") {
+            $chapter->setStatus("N");
+            $chapter->setIsActive(true);
+            $chapter->setIsDeleted(false);
+            $chapter->setCreatedAt($date);
+            $chapter->setCreatedBy($user);
+        } else {
+            $chapter->setUpdatedAt($date);
+            $chapter->setUpdatedBy($user);
+        }
+
+        $this->entityManager->persist($chapter);
+        $this->entityManager->flush();
+
+        return new JsonResponse([
+            'result' => true,
+            'message' => sprintf("Chapitre %s avec succès !", $chapterId === "create" ? "crée" : "modifié"),
+            'chapterId' => $chapter->getId()
+        ]);
+    }
+
+    #[Route('/book/{id}', name: 'api_get_book')]
+    public function apiBook(Request $request, $id = null): Response
+    {
+        $payload = json_decode($request->getContent(), true);
+
+        $token = $this->authTokensRepository->findByTokenAndValidity($payload["token"]);
+        $date = new \DateTime();
+
+        if(!$token || ($token && $token->getValidUntil() < $date)) {
+            return new JsonResponse([
+                'result' => false,
+                'type' => 'tokenNotValid',
+                'message' => "Le token n'existe pas ou n'est plus valide."
+            ]);
+        } else {
+            $user = $token->getUser();
+            $token = $token->getToken();
+        }
+
+        $book = $this->booksRepository->find($id);
+
+        if(!$book) {
+            return new JsonResponse([
+                'result' => false,
+                'type' => 'bookNotExist',
+                'message' => "Le livre n'existe pas."
+            ]);
+        }
+
+        if($request->query->has('forChapterCreation')) {
+            if($book->getCreatedBy() === $user) {
+                return new JsonResponse([
+                    'result' => true,
+                    'book' => $this->serializer->serialize($book, 'json')
+                ]);
+            } else {
+                return new JsonResponse([
+                    'result' => false,
+                    'type' => 'bookNotBelongsToUser',
+                    'message' => "Le livre ne vous appartient pas."
+                ]);
+            }
+        }
+
+        if($request->query->has('forBookCreation')) {
+            // interface CharacterInterface {
+            //     firstName: string;
+            //     middleNames: string;
+            //     lastName: string;
+            //     nickname: string;
+            //     gender: string;
+            //     pronouns: string;
+            //     race: string;
+            //     age: string;
+            //     uuid: string;
+            //     image: File|null;
+            //     imageBase64: string;
+            //     public: boolean;
+            //     userFields: {
+            //         label: string;
+            //         value: string;
+            //         uuid: string;
+            //     }[];
+            // }
+            
+            // interface RelationInterface {
+            //     characterOne: CharacterInterface,
+            //     characterTwo: CharacterInterface,
+            //     label: string;
+            //     uuid: string;
+            // }
+            
+            // interface LocationInterface {
+            //     name: string;
+            //     description: string;
+            //     uuid: string;
+            //     image: File|null;
+            //     imageBase64: string;
+            //     public: boolean;
+            //     userFields: {
+            //         label: string;
+            //         value: string;
+            //         uuid: string;
+            //     }[];
+            // }
+
+            if($book->getCreatedBy() === $user) {
+                $characters = [];
+                $charactersFromBook = $this->charactersRepository->findBy(["book" => $book, "isActive" => true, "isDeleted" => false]);
+                foreach($charactersFromBook as $character) {
+                    $characterUserFields = [];
+                    $userFieldsFromCharacter = $this->characterUserFieldsRepository->findBy(["character" => $character, "isActive" => true, "isDeleted" => false]);
+                    foreach($userFieldsFromCharacter as $userField) {
+                        $characterUserFields[] = [
+                            "label" => $userField->getLabel(),
+                            "value" => $userField->getValue(),
+                            "uuid" => $userField->getUuid()
+                        ];
+                    }
+
+                    $characterPath = $_ENV["BACKEND_PATH"] . "/images/characters/" . $character->getImage();
+                    $characterType = pathinfo($characterPath, PATHINFO_EXTENSION);
+                    $characterData = file_get_contents($characterPath);
+                    $characterBase64 = 'data:image/' . $type . ';base64,' . base64_encode($characterData);
+
+                    $characters[] = [
+                        "name" => $character->getName(),
+                        "description" => $character->getDescription(),
+                        "uuid" => $character->getUuid(),
+                        "image" => $character->getImage(),
+                        "imageBase64" => $base64,
+                        "public" => true,
+                        "userFields" => $characterUserFields
+                    ];
+                }
+
+                $locations = [];
+                $locationsFromBook = $this->locationsRepository->findBy(["book" => $book, "isActive" => true, "isDeleted" => false]);
+                foreach($locationsFromBook as $location) {
+                    $locationUserFields = [];
+                    $userFieldsFromLocation = $this->locationUserFieldsRepository->findBy(["location" => $location, "isActive" => true, "isDeleted" => false]);
+                    foreach($userFieldsFromLocation as $userField) {
+                        $locationUserFields[] = [
+                            "label" => $userField->getLabel(),
+                            "value" => $userField->getValue(),
+                            "uuid" => $userField->getUuid()
+                        ];
+                    }
+
+                    $locationPath = $_ENV["BACKEND_PATH"] . "/images/locations/" . $location->getImage();
+                    $locationType = pathinfo($locationPath, PATHINFO_EXTENSION);
+                    $locationData = file_get_contents($locationPath);
+                    $locationBase64 = 'data:image/' . $type . ';base64,' . base64_encode($locationData);
+
+                    $locations[] = [
+                        "firstName" => $location->getFirstName(),
+                        "middleNames" => $location->getMiddleNames(),
+                        "lastName" => $location->getLastName(),
+                        "nickname" => $location->getNickname(),
+                        "gender" => $location->getGender(),
+                        "pronouns" => $location->getPronouns(),
+                        "race" => $location->getRace(),
+                        "age" => $location->getAge(),
+                        "uuid" => $location->getUuid(),
+                        "image" => $location->getImage(),
+                        "imageBase64" => $base64,
+                        "public" => true,
+                        "userFields" => $locationUserFields
+                    ];
+                }
+
+                dd($characters);
+
+                $relations = [];
+                $relationsFromBook = $this->characterRelationsRepository->findRelationsFromCharacters($characters);
+                foreach($relationsFromBook as $relation) {
+                    $characterOne = array_find($characters, function($character) use($relation) {
+                        return $character["uuid"] === $relation->getCharacterOne()->getUuid();
+                    });
+                    $characterTwo = array_find($characters, function($character) use($relation) {
+                        return $character["uuid"] === $relation->getCharacterTwo()->getUuid();
+                    });
+
+                    $relations[] = [
+                        "characterOne" => $characterOne,
+                        "characterTwo" => $characterTwo,
+                        "label" => "string",
+                        "uuid" => "string"
+                    ];
+                }
+
+                $chapters = [];
+                $chaptersFromBook = $this->chaptersRepository->findBy(["book" => $book, "isActive" => true, "isDeleted" => false]);
+                foreach($chaptersFromBook as $chapter) {
+                    $chapters[] = [
+                        "id" => $chapter->getId(),
+                        "title" => $chapter->getTitle(),
+                        "summary" => $chapter->getSummary(),
+                        "content" => $chapter->getContent(),
+                        "status" => $chapter->getStatus(),
+                        "isActive" => $chapter->isActive(),
+                        "isDeleted" => $chapter->isDeleted(),
+                        "createdAt" => $chapter->getCreatedAt(),
+                        "createdBy" => $chapter->getCreatedBy(),
+                        "updatedAt" => $chapter->getUpdatedAt(),
+                        "updatedBy" => $chapter->getUpdatedBy()
+                    ];
+                }
+
+                return new JsonResponse([
+                    'result' => true,
+                    'book' => $this->serializer->serialize($book, 'json'),
+                    'characters' => $characters,
+                    'relations' => $relations,
+                    'locations' => $locations,
+                    'chapters' => $chapters
+                ]);
+            } else {
+                return new JsonResponse([
+                    'result' => false,
+                    'type' => 'bookNotBelongsToUser',
+                    'message' => "Le livre ne vous appartient pas."
+                ]);
+            }
+        }
+
+        return new JsonResponse([
+            'result' => true,
+            'book' => $this->serializer->serialize($book, 'json')
+        ]);
+    }
+
+    #[Route('/chapter/{id}', name: 'api_get_chapter')]
+    public function apiChapter(Request $request, $id = null): Response
+    {
+        $payload = json_decode($request->getContent(), true);
+
+        $token = $this->authTokensRepository->findByTokenAndValidity($payload["token"]);
+        $date = new \DateTime();
+
+        if(!$token || ($token && $token->getValidUntil() < $date)) {
+            return new JsonResponse([
+                'result' => false,
+                'type' => 'tokenNotValid',
+                'message' => "Le token n'existe pas ou n'est plus valide."
+            ]);
+        } else {
+            $user = $token->getUser();
+            $token = $token->getToken();
+        }
+
+        $chapter = $this->chaptersRepository->find($id);
+
+        if(!$chapter) {
+            return new JsonResponse([
+                'result' => false,
+                'type' => 'chapterNotExist',
+                'message' => "Le livre n'existe pas."
+            ]);
+        }
+
+        if($request->query->has('forChapterCreation')) {
+            if($chapter->getCreatedBy() === $user) {
+                return new JsonResponse([
+                    'result' => true,
+                    'chapter' => $this->serializer->serialize($chapter, 'json')
+                ]);
+            } else {
+                return new JsonResponse([
+                    'result' => false,
+                    'type' => 'chapterNotBelongsToUser',
+                    'message' => "Le livre ne vous appartient pas."
+                ]);
+            }
+        }
+
+        return new JsonResponse([
+            'result' => true,
+            'chapter' => $this->serializer->serialize($chapter, 'json')
+        ]);
     }
 }

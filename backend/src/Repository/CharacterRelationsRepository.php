@@ -40,4 +40,21 @@ class CharacterRelationsRepository extends ServiceEntityRepository
     //            ->getOneOrNullResult()
     //        ;
     //    }
+
+    public function findRelationsFromCharacters(array $characters)
+    {
+        $qb = $this->createQueryBuilder("cr");
+
+        dd("(" . implode(", ", $characters) . ")");
+
+        return $qb->andWhere('cr.characterOne IN :characters')
+                    ->orWhere('cr.characterTwo IN :characters')
+                    ->setParameter('characters', "(" . implode(", ", $characters) . ")")
+                    ->andWhere('cr.isActive = :isActive')
+                    ->andWhere('cr.isDeleted = :isDeleted')
+                    ->setParameter('isActive', true)
+                    ->setParameter('isDeleted', false)
+                    ->getQuery()
+                    ->getResult();
+    }
 }
