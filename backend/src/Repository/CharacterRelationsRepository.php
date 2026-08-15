@@ -45,11 +45,16 @@ class CharacterRelationsRepository extends ServiceEntityRepository
     {
         $qb = $this->createQueryBuilder("cr");
 
-        dd("(" . implode(", ", $characters) . ")");
+        $charactersIds = [];
 
-        return $qb->andWhere('cr.characterOne IN :characters')
-                    ->orWhere('cr.characterTwo IN :characters')
-                    ->setParameter('characters', "(" . implode(", ", $characters) . ")")
+        if(count($characters) > 0) {
+            foreach($characters as $character) {
+                $charactersIds[] = $character["id"];
+            }
+        }
+
+        return $qb->andWhere('cr.firstCharacter IN' . "(" . implode(", ", $charactersIds) . ")")
+                    ->orWhere('cr.secondCharacter IN' . "(" . implode(", ", $charactersIds) . ")")
                     ->andWhere('cr.isActive = :isActive')
                     ->andWhere('cr.isDeleted = :isDeleted')
                     ->setParameter('isActive', true)

@@ -75,9 +75,9 @@ const Navbar = () => {
                             <div className="p-2 border-b border-b-gray-400 text-sm text-body font-medium">
                                 <a href="/createBook" className="inline-flex items-center w-full p-2 hover:bg-neutral-tertiary-medium hover:text-heading rounded">Écrire</a>
                             </div>
-                            <div className="p-2 border-b border-b-gray-400 text-sm text-body font-medium">
+                            {/* <div className="p-2 border-b border-b-gray-400 text-sm text-body font-medium">
                                 <a href="/user/me/update" className="inline-flex items-center w-full p-2 hover:bg-neutral-tertiary-medium hover:text-heading rounded">Paramètres</a>
-                            </div>
+                            </div> */}
                             <div className="p-2 text-sm text-body font-medium">
                                 <a
                                     href="#"
