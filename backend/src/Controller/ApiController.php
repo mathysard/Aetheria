@@ -1131,7 +1131,7 @@ final class ApiController extends AbstractController
                         $characterUserField = new CharacterUserFields();
                         $characterUserFieldInDb = $this->characterUserFieldsRepository->findOneBy(["uuid" => $userField["uuid"]]);
                         if($characterUserFieldInDb !== null) {
-                            $characterEntity = $characterUserFieldInDb;
+                            $characterUserField = $characterUserFieldInDb;
                         }
         
                         $characterUserField->setUuid($userField["uuid"]);
@@ -1254,7 +1254,7 @@ final class ApiController extends AbstractController
                 $characterRelation = new CharacterRelations();
                 $characterRelationInDb = $this->characterRelationsRepository->findOneBy(["uuid" => $relation["uuid"]]);
                 if($characterRelationInDb !== null) {
-                    $characterRelationEntity = $characterRelationInDb;
+                    $characterRelation = $characterRelationInDb;
                 }
 
                 $characterRelation->setUuid($relation["uuid"]);
@@ -1395,7 +1395,7 @@ final class ApiController extends AbstractController
                         $locationUserField = new LocationUserFields();
                         $locationUserFieldInDb = $this->locationUserFieldsRepository->findOneBy(["uuid" => $userField["uuid"]]);
                         if($locationUserFieldInDb !== null) {
-                            $locationEntity = $locationUserFieldInDb;
+                            $locationUserField = $locationUserFieldInDb;
                         }
         
                         $locationUserField->setUuid($userField["uuid"]);
@@ -1608,6 +1608,7 @@ final class ApiController extends AbstractController
                     $userFieldsFromCharacter = $this->characterUserFieldsRepository->findBy(["bookCharacter" => $character->getId(), "isActive" => true, "isDeleted" => false]);
                     foreach($userFieldsFromCharacter as $userField) {
                         $characterUserFields[] = [
+                            "id" => $userField->getId(),
                             "label" => $userField->getName(),
                             "value" => $userField->getContent(),
                             "uuid" => $userField->getUuid()
@@ -1645,6 +1646,7 @@ final class ApiController extends AbstractController
                     $userFieldsFromLocation = $this->locationUserFieldsRepository->findBy(["bookLocation" => $location->getId(), "isActive" => true, "isDeleted" => false]);
                     foreach($userFieldsFromLocation as $userField) {
                         $locationUserFields[] = [
+                            "id" => $userField->getId(),
                             "label" => $userField->getName(),
                             "value" => $userField->getContent(),
                             "uuid" => $userField->getUuid()
@@ -1657,12 +1659,13 @@ final class ApiController extends AbstractController
                     $locationBase64 = 'data:image/' . $locationType . ';base64,' . base64_encode($locationData);
 
                     $locations[] = [
+                        "id" => $location->getId(),
                         "name" => $location->getName(),
                         "description" => $location->getDescription(),
                         "uuid" => $location->getUuid(),
                         "image" => $location->getImage(),
                         "imageName" => $location->getImage(),
-                        "imageBase64" => $base64,
+                        "imageBase64" => $locationBase64,
                         "public" => true,
                         "userFields" => $locationUserFields
                     ];
@@ -1673,17 +1676,18 @@ final class ApiController extends AbstractController
                     $relationsFromBook = $this->characterRelationsRepository->findRelationsFromCharacters($characters);
                     foreach($relationsFromBook as $relation) {
                         $characterOne = array_find($characters, function($character) use($relation) {
-                            return $character["uuid"] === $relation->getCharacterOne()->getUuid();
+                            return $character["uuid"] === $relation->getFirstCharacter()->getUuid();
                         });
                         $characterTwo = array_find($characters, function($character) use($relation) {
-                            return $character["uuid"] === $relation->getCharacterTwo()->getUuid();
+                            return $character["uuid"] === $relation->getSecondCharacter()->getUuid();
                         });
     
                         $relations[] = [
+                            "id" => $relation->getId(),
                             "characterOne" => $characterOne,
                             "characterTwo" => $characterTwo,
-                            "label" => "string",
-                            "uuid" => "string"
+                            "label" => $relation->getRelationLabel(),
+                            "uuid" => $relation->getUuid()
                         ];
                     }
                 }
@@ -1774,9 +1778,474 @@ final class ApiController extends AbstractController
             }
         }
 
+        if($request->query->has('forChapterRead')) {
+            $userPath = $_ENV["BACKEND_PATH"] . "/images/profile_pictures/" . $chapter->getBook()->getCreatedBy()->getProfilePicture();
+            $userType = pathinfo($userPath, PATHINFO_EXTENSION);
+            $userData = file_get_contents($userPath);
+            $userBase64 = 'data:image/' . $userType . ';base64,' . base64_encode($userData);
+
+            $bookPath = $_ENV["BACKEND_PATH"] . "/images/book_covers/" . $chapter->getBook()->getCover();
+            $bookType = pathinfo($bookPath, PATHINFO_EXTENSION);
+            $bookData = file_get_contents($bookPath);
+            $bookBase64 = 'data:image/' . $bookType . ';base64,' . base64_encode($bookData);
+
+            return new JsonResponse([
+                'result' => true,
+                'chapter' => $this->serializer->serialize($chapter, 'json'),
+                'book' => $this->serializer->serialize($chapter->getBook(), 'json'),
+                'userProfilePicture' => $userBase64,
+                'bookCover' => $bookBase64
+            ]);
+        }
+
         return new JsonResponse([
             'result' => true,
             'chapter' => $this->serializer->serialize($chapter, 'json')
+        ]);
+    }
+
+    #[Route('/character/delete/{id}', name: 'api_delete_character')]
+    public function apiDeleteCharacter(Request $request, $id = null): Response
+    {
+        $payload = json_decode($request->getContent(), true);
+
+        $token = $this->authTokensRepository->findByTokenAndValidity($payload["token"]);
+        $date = new \DateTime();
+
+        if(!$token || ($token && $token->getValidUntil() < $date)) {
+            return new JsonResponse([
+                'result' => false,
+                'type' => 'tokenNotValid',
+                'message' => "Le token n'existe pas ou n'est plus valide."
+            ]);
+        } else {
+            $user = $token->getUser();
+            $token = $token->getToken();
+        }
+
+        $character = $this->charactersRepository->find($id);
+
+        if(!$character) {
+            return new JsonResponse([
+                'result' => false,
+                'type' => 'characterNotExist',
+                'message' => "Le personnage n'existe pas."
+            ]);
+        }
+
+        $character->setIsActive(false);
+        $character->setIsDeleted(true);
+
+        $this->entityManager->persist($character);
+        $this->entityManager->flush();
+
+        return new JsonResponse([
+            'result' => true,
+            'message' => 'Personnage supprimé avec succès !'
+        ]);
+    }
+
+    #[Route('/character/userField/delete/{id}', name: 'api_delete_character_user_field')]
+    public function apiDeleteCharacterUserField(Request $request, $id = null): Response
+    {
+        $payload = json_decode($request->getContent(), true);
+
+        $token = $this->authTokensRepository->findByTokenAndValidity($payload["token"]);
+        $date = new \DateTime();
+
+        if(!$token || ($token && $token->getValidUntil() < $date)) {
+            return new JsonResponse([
+                'result' => false,
+                'type' => 'tokenNotValid',
+                'message' => "Le token n'existe pas ou n'est plus valide."
+            ]);
+        } else {
+            $user = $token->getUser();
+            $token = $token->getToken();
+        }
+
+        $character = $this->characterUserFieldsRepository->find($id);
+
+        if(!$character) {
+            return new JsonResponse([
+                'result' => false,
+                'type' => 'characterNotExist',
+                'message' => "Le personnage n'existe pas."
+            ]);
+        }
+
+        $character->setIsActive(false);
+        $character->setIsDeleted(true);
+
+        $this->entityManager->persist($character);
+        $this->entityManager->flush();
+
+        return new JsonResponse([
+            'result' => true,
+            'message' => 'Personnage supprimé avec succès !'
+        ]);
+    }
+
+    #[Route('/location/delete/{id}', name: 'api_delete_location')]
+    public function apiDeleteLocation(Request $request, $id = null): Response
+    {
+        $payload = json_decode($request->getContent(), true);
+
+        $token = $this->authTokensRepository->findByTokenAndValidity($payload["token"]);
+        $date = new \DateTime();
+
+        if(!$token || ($token && $token->getValidUntil() < $date)) {
+            return new JsonResponse([
+                'result' => false,
+                'type' => 'tokenNotValid',
+                'message' => "Le token n'existe pas ou n'est plus valide."
+            ]);
+        } else {
+            $user = $token->getUser();
+            $token = $token->getToken();
+        }
+
+        $location = $this->locationsRepository->find($id);
+
+        if(!$location) {
+            return new JsonResponse([
+                'result' => false,
+                'type' => 'locationNotExist',
+                'message' => "Le lieu n'existe pas."
+            ]);
+        }
+
+        $location->setIsActive(false);
+        $location->setIsDeleted(true);
+
+        $this->entityManager->persist($location);
+        $this->entityManager->flush();
+
+        return new JsonResponse([
+            'result' => true,
+            'message' => 'Lieu supprimé avec succès !'
+        ]);
+    }
+
+    #[Route('/location/userField/delete/{id}', name: 'api_delete_location_user_field')]
+    public function apiDeleteLocationUserField(Request $request, $id = null): Response
+    {
+        $payload = json_decode($request->getContent(), true);
+
+        $token = $this->authTokensRepository->findByTokenAndValidity($payload["token"]);
+        $date = new \DateTime();
+
+        if(!$token || ($token && $token->getValidUntil() < $date)) {
+            return new JsonResponse([
+                'result' => false,
+                'type' => 'tokenNotValid',
+                'message' => "Le token n'existe pas ou n'est plus valide."
+            ]);
+        } else {
+            $user = $token->getUser();
+            $token = $token->getToken();
+        }
+
+        $location = $this->locationUserFieldsRepository->find($id);
+
+        if(!$location) {
+            return new JsonResponse([
+                'result' => false,
+                'type' => 'locationNotExist',
+                'message' => "Le lieu n'existe pas."
+            ]);
+        }
+
+        $location->setIsActive(false);
+        $location->setIsDeleted(true);
+
+        $this->entityManager->persist($location);
+        $this->entityManager->flush();
+
+        return new JsonResponse([
+            'result' => true,
+            'message' => 'Lieu supprimé avec succès !'
+        ]);
+    }
+
+    #[Route('/relation/delete/{id}', name: 'api_delete_relation')]
+    public function apiDeleteRelation(Request $request, $id = null): Response
+    {
+        $payload = json_decode($request->getContent(), true);
+
+        $token = $this->authTokensRepository->findByTokenAndValidity($payload["token"]);
+        $date = new \DateTime();
+
+        if(!$token || ($token && $token->getValidUntil() < $date)) {
+            return new JsonResponse([
+                'result' => false,
+                'type' => 'tokenNotValid',
+                'message' => "Le token n'existe pas ou n'est plus valide."
+            ]);
+        } else {
+            $user = $token->getUser();
+            $token = $token->getToken();
+        }
+
+        $relation = $this->characterRelationsRepository->find($id);
+
+        if(!$relation) {
+            return new JsonResponse([
+                'result' => false,
+                'type' => 'relationNotExist',
+                'message' => "La relation n'existe pas."
+            ]);
+        }
+
+        $relation->setIsActive(false);
+        $relation->setIsDeleted(true);
+
+        $this->entityManager->persist($relation);
+        $this->entityManager->flush();
+
+        return new JsonResponse([
+            'result' => true,
+            'message' => 'Relation supprimée avec succès !'
+        ]);
+    }
+
+    #[Route('/chapter/delete/{id}', name: 'api_delete_chapter')]
+    public function apiDeleteChapter(Request $request, $id = null): Response
+    {
+        $payload = json_decode($request->getContent(), true);
+
+        $token = $this->authTokensRepository->findByTokenAndValidity($payload["token"]);
+        $date = new \DateTime();
+
+        if(!$token || ($token && $token->getValidUntil() < $date)) {
+            return new JsonResponse([
+                'result' => false,
+                'type' => 'tokenNotValid',
+                'message' => "Le token n'existe pas ou n'est plus valide."
+            ]);
+        } else {
+            $user = $token->getUser();
+            $token = $token->getToken();
+        }
+
+        $chapter = $this->chaptersRepository->find($id);
+
+        if(!$chapter) {
+            return new JsonResponse([
+                'result' => false,
+                'type' => 'chapterNotExist',
+                'message' => "Le chapitre n'existe pas."
+            ]);
+        }
+
+        $chapter->setIsActive(false);
+        $chapter->setIsDeleted(true);
+
+        $this->entityManager->persist($chapter);
+        $this->entityManager->flush();
+
+        return new JsonResponse([
+            'result' => true,
+            'message' => 'Chapitre supprimé avec succès !'
+        ]);
+    }
+
+    #[Route('/user/{id}', name: 'api_user')]
+    public function apiUser(Request $request, $id = null): Response
+    {
+        $payload = json_decode($request->getContent(), true);
+
+        $token = $this->authTokensRepository->findByTokenAndValidity($payload["token"]);
+        $date = new \DateTime();
+
+        if(!$token || ($token && $token->getValidUntil() < $date)) {
+            return new JsonResponse([
+                'result' => false,
+                'type' => 'tokenNotValid',
+                'message' => "Le token n'existe pas ou n'est plus valide."
+            ]);
+        } else {
+            $user = $token->getUser();
+            $token = $token->getToken();
+        }
+
+        if($id !== "me") {
+            $user = $this->usersRepository->find($id);
+        }
+
+        if(!$user) {
+            return new JsonResponse([
+                'result' => false,
+                'type' => 'userNotExist',
+                'message' => "L'utilisateur n'existe pas."
+            ]);
+        }
+
+        $userPath = $_ENV["BACKEND_PATH"] . "/images/profile_pictures/" . $user->getProfilePicture();
+        $userType = pathinfo($userPath, PATHINFO_EXTENSION);
+        $userData = file_get_contents($userPath);
+        $userBase64 = 'data:image/' . $userType . ';base64,' . base64_encode($userData);
+
+        $booksByUser = $this->booksRepository->findBy(["createdBy" => $user->getId(), "isActive" => true, "isDeleted" => false]);
+        $books = [];
+
+        foreach($booksByUser as $i => $book) {
+            $bookPath = $_ENV["BACKEND_PATH"] . "/images/book_covers/" . $book->getCover();
+            $bookType = pathinfo($bookPath, PATHINFO_EXTENSION);
+            $bookData = file_get_contents($bookPath);
+            $bookBase64 = 'data:image/' . $bookType . ';base64,' . base64_encode($bookData);
+            // $booksByUser[$i]["coverBase64"] = $bookBase64;
+            $books[] = [
+                "id" => $book->getId(),
+                "title" => $book->getTitle(),
+                "cover" => $book->getCover(),
+                "coverBase64" => $bookBase64,
+                "description" => $book->getDescription(),
+                "nsfw" => $book->isNsfw(),
+                "visibility" => $book->getVisibility(),
+                "triggerWarnings" => $book->getTriggerWarnings(),
+                "status" => $book->getStatus(),
+                "active" => $book->isActive(),
+                "deleted" => $book->isDeleted(),
+                "createdAt" => $book->getCreatedAt(),
+                "createdBy" => $book->getCreatedBy(),
+                "updatedAt" => $book->getUpdatedAt(),
+                "updatedBy" => $book->getUpdatedBy()
+            ];
+        }
+
+        return new JsonResponse([
+            'result' => true,
+            'user' => $this->serializer->serialize($user, 'json'),
+            'userProfilePicture' => $userBase64,
+            'books' => $books
+        ]);
+    }
+
+    #[Route('/homePage', name: 'api_homepage')]
+    public function apiHomepage(Request $request): Response
+    {
+        $mostRecentBooks = $this->booksRepository->getMostRecentBooks(6);
+        $mostRecentUsers = $this->usersRepository->findBy(["isActive" => true, "isDeleted" => false]);
+
+        $books = [];
+        $users = [];
+
+        foreach($mostRecentBooks as $i => $book) {
+            $bookPath = $_ENV["BACKEND_PATH"] . "/images/book_covers/" . $book->getCover();
+            $bookType = pathinfo($bookPath, PATHINFO_EXTENSION);
+            $bookData = file_get_contents($bookPath);
+            $bookBase64 = 'data:image/' . $bookType . ';base64,' . base64_encode($bookData);
+            $books[] = [
+                "id" => $book->getId(),
+                "title" => $book->getTitle(),
+                "cover" => $book->getCover(),
+                "coverBase64" => $bookBase64,
+                "description" => $book->getDescription(),
+                "nsfw" => $book->isNsfw(),
+                "visibility" => $book->getVisibility(),
+                "triggerWarnings" => $book->getTriggerWarnings(),
+                "status" => $book->getStatus(),
+                "active" => $book->isActive(),
+                "deleted" => $book->isDeleted(),
+                "createdAt" => $book->getCreatedAt(),
+                "createdBy" => $book->getCreatedBy(),
+                "updatedAt" => $book->getUpdatedAt(),
+                "updatedBy" => $book->getUpdatedBy()
+            ];
+        }
+
+        foreach($mostRecentUsers as $i => $user) {
+            $userPath = $_ENV["BACKEND_PATH"] . "/images/profile_pictures/" . $user->getProfilePicture();
+            $userType = pathinfo($userPath, PATHINFO_EXTENSION);
+            $userData = file_get_contents($userPath);
+            $userBase64 = 'data:image/' . $userType . ';base64,' . base64_encode($userData);
+            $users[] = [
+                "id" => $user->getId(),
+                "username" => $user->getUsername(),
+                "profilePicture" => $user->getProfilePicture(),
+                "profilePictureBase64" => $userBase64,
+                "status" => $user->getStatus(),
+                "active" => $user->isActive(),
+                "deleted" => $user->isDeleted(),
+                "createdAt" => $user->getCreatedAt(),
+                "createdBy" => $user->getCreatedBy(),
+                "updatedAt" => $user->getUpdatedAt(),
+                "updatedBy" => $user->getUpdatedBy(),
+                "booksCount" => $this->booksRepository->getBooksCountByUser($user)
+            ];
+        }
+
+        usort($users, fn($a, $b) => $b["booksCount"] <=> $a["booksCount"]);
+        $user = array_slice($users, 0, 7);
+
+        return new JsonResponse([
+            'result' => true,
+            'books' => $books,
+            'users' => $users
+        ]);
+    }
+
+    #[Route('/searchScreen', name: 'api_search_screen')]
+    public function apiSearchScreen(Request $request): Response
+    {
+        $payload = json_decode($request->getContent(), true);
+
+        $booksBySearch = $this->booksRepository->findBySearch($payload["search"]);
+        $usersBySearch = $this->usersRepository->findBySearch($payload["search"]);
+
+        $books = [];
+        $users = [];
+
+        foreach($booksBySearch as $i => $book) {
+            $bookPath = $_ENV["BACKEND_PATH"] . "/images/book_covers/" . $book->getCover();
+            $bookType = pathinfo($bookPath, PATHINFO_EXTENSION);
+            $bookData = file_get_contents($bookPath);
+            $bookBase64 = 'data:image/' . $bookType . ';base64,' . base64_encode($bookData);
+            $books[] = [
+                "id" => $book->getId(),
+                "title" => $book->getTitle(),
+                "cover" => $book->getCover(),
+                "coverBase64" => $bookBase64,
+                "description" => $book->getDescription(),
+                "nsfw" => $book->isNsfw(),
+                "visibility" => $book->getVisibility(),
+                "triggerWarnings" => $book->getTriggerWarnings(),
+                "status" => $book->getStatus(),
+                "active" => $book->isActive(),
+                "deleted" => $book->isDeleted(),
+                "createdAt" => $book->getCreatedAt(),
+                "createdBy" => $book->getCreatedBy(),
+                "updatedAt" => $book->getUpdatedAt(),
+                "updatedBy" => $book->getUpdatedBy(),
+            ];
+        }
+
+        foreach($usersBySearch as $i => $user) {
+            $userPath = $_ENV["BACKEND_PATH"] . "/images/profile_pictures/" . $user->getProfilePicture();
+            $userType = pathinfo($userPath, PATHINFO_EXTENSION);
+            $userData = file_get_contents($userPath);
+            $userBase64 = 'data:image/' . $userType . ';base64,' . base64_encode($userData);
+            $users[] = [
+                "id" => $user->getId(),
+                "username" => $user->getUsername(),
+                "profilePicture" => $user->getProfilePicture(),
+                "profilePictureBase64" => $userBase64,
+                "status" => $user->getStatus(),
+                "active" => $user->isActive(),
+                "deleted" => $user->isDeleted(),
+                "createdAt" => $user->getCreatedAt(),
+                "createdBy" => $user->getCreatedBy(),
+                "updatedAt" => $user->getUpdatedAt(),
+                "updatedBy" => $user->getUpdatedBy(),
+                "booksCount" => $this->booksRepository->getBooksCountByUser($user)
+            ];
+        }
+
+        return new JsonResponse([
+            'result' => true,
+            'books' => $books,
+            'users' => $users
         ]);
     }
 }

@@ -40,4 +40,52 @@ class BooksRepository extends ServiceEntityRepository
     //            ->getOneOrNullResult()
     //        ;
     //    }
+
+    public function getMostRecentBooks($limit) {
+        return $this->createQueryBuilder('b')
+                    ->andWhere('b.isActive = :isActive')
+                    ->andWhere('b.isDeleted = :isDeleted')
+                    ->setParameter('isActive', true)
+                    ->setParameter('isDeleted', false)
+                    ->orderBy('b.createdAt', 'DESC')
+                    ->setMaxResults($limit)
+                    ->getQuery()
+                    ->getResult();
+    }
+
+    public function getBooksCountByUser($user) {
+        return $this->createQueryBuilder('b')
+                    ->andWhere('b.createdBy = :user')
+                    ->setParameter('user', $user)
+                    ->select('COUNT(b.id)')
+                    ->getQuery()
+                    ->getSingleScalarResult();
+    }
+
+    public function findBySearch($search) {
+        return $this->createQueryBuilder('b')
+                    ->andWhere('b.title = :search')
+                    ->orWhere('b.title LIKE :search')
+                    ->setParameter('search', "%" . $search . "%")
+                    ->andWhere('b.isActive = :isActive')
+                    ->andWhere('b.isDeleted = :isDeleted')
+                    ->setParameter('isActive', true)
+                    ->setParameter('isDeleted', false)
+                    ->orderBy('b.createdAt', 'DESC')
+                    ->getQuery()
+                    ->getResult();
+    }
+
+    public function countBooksByUser($user) {
+        return $this->createQueryBuilder('b')
+                    ->andWhere('b.createdBy = :user')
+                    ->setParameter('user', $user)
+                    ->andWhere('b.isActive = :isActive')
+                    ->andWhere('b.isDeleted = :isDeleted')
+                    ->setParameter('isActive', true)
+                    ->setParameter('isDeleted', false)
+                    ->select('COUNT(b.id)')
+                    ->getQuery()
+                    ->getSingleScalarResult();
+    }
 }

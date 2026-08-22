@@ -40,4 +40,18 @@ class UsersRepository extends ServiceEntityRepository
     //            ->getOneOrNullResult()
     //        ;
     //    }
+
+    public function findBySearch($search) {
+        return $this->createQueryBuilder('u')
+                    ->andWhere('u.username = :search')
+                    ->orWhere('u.displayName LIKE :search')
+                    ->setParameter('search', "%" . $search . "%")
+                    ->andWhere('u.isActive = :isActive')
+                    ->andWhere('u.isDeleted = :isDeleted')
+                    ->setParameter('isActive', true)
+                    ->setParameter('isDeleted', false)
+                    ->orderBy('u.createdAt', 'DESC')
+                    ->getQuery()
+                    ->getResult();
+    }
 }

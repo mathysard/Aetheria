@@ -1703,7 +1703,7 @@ const CreateBook = () => {
                                 </button>
                             </div>
 
-                            <div className="w-full border-gray-300 rounded-lg border-2 mt-8 pb-4">
+                            {/* <div className="w-full border-gray-300 rounded-lg border-2 mt-8 pb-4">
                                 <div className="ml-4 mt-4">
                                     <p className="mt-1 text-lg font-semibold">Univers parallèle</p>
                                     <div className="flex pt-2 pb-1">
@@ -1725,7 +1725,7 @@ const CreateBook = () => {
                                         <svg className="w-4 h-4 ms-1.5 rtl:rotate-180 -me-0.5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24"><path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 12H5m14 0-4 4m4-4-4-4"/></svg>
                                     </button>
                                 </div>
-                            </div>
+                            </div> */}
                         </div>
                         {(
                             (activeScreen === "book")

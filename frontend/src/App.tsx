@@ -11,6 +11,7 @@ import GenericData from './pages/GenericData';
 import UpdateUser from './pages/UpdateUser';
 import SearchPage from './pages/SearchPage';
 import UpdateBook from './pages/UpdateBook';
+import ReadBook from './pages/ReadBook';
 
 interface RoutesTitleInterface {
   [key: string]: string;
@@ -108,6 +109,11 @@ const App = () => {
                 <Route
                     path="/book/:bookId/update"
                     element={<UpdateBook />}
+                />
+
+                <Route
+                    path="/book/:bookId"
+                    element={<ReadBook />}
                 />
 
                 <Route
