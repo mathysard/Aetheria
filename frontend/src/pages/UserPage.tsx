@@ -17,6 +17,8 @@ interface BookThumbnailInterface {
 }
 
 const BookThumbnail = ({ id, title, cover, description }: BookThumbnailInterface) => {
+    const { userId } = useParams();
+
     return (
         <div className="flex gap-6">
             <div className="w-32 h-48 bg-black text-white flex items-center justify-center text-xs rounded-md">
@@ -26,9 +28,18 @@ const BookThumbnail = ({ id, title, cover, description }: BookThumbnailInterface
             </div>
 
             <div className="flex flex-col gap-2">
-                <a href={`/book/${id}`}>
-                    <h3 className="font-semibold text-lg cursor-pointer hover:underline">{title}</h3>
-                </a>
+                <div className="flex">
+                    {userId === "me" && (
+                        <a href={`/book/${id}/update`}>
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="oklch(37.3% 0.034 259.733)" className="size-6 mr-2 hover:cursor-pointer">
+                                <path stroke-linecap="round" strokeLinejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L6.832 19.82a4.5 4.5 0 0 1-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 0 1 1.13-1.897L16.863 4.487Zm0 0L19.5 7.125" />
+                            </svg>                  
+                        </a>
+                    )}
+                    <a href={`/book/${id}`}>
+                        <h3 className="font-semibold text-lg cursor-pointer hover:underline">{title}</h3>
+                    </a>
+                </div>
 
                 <div className="flex items-center gap-3 text-sm text-gray-500">
                     {/* <div className="flex justify-around pt-2 pb-1">
@@ -117,7 +128,7 @@ export default function UserPage() {
 
                 <div className="space-y-4">
                     <div className="flex items-end justify-between border-b pb-2">
-                        <h2 className="text-2xl font-semibold">{userId === "me" ? "Mes livres" : `Livres de John Doe`}</h2>
+                        <h2 className="text-2xl font-semibold">{userId === "me" ? "Mes livres" : `Livres de ${user.displayName}`}</h2>
                     </div>
 
                     <div className="rounded-2xl">
@@ -132,13 +143,15 @@ export default function UserPage() {
                                     // likes={book.likes}
                                     description={book.description}
                                 />
-                            )) : null}
+                            )) : <p className="text-lg text-gray-500 font-semibold text-center">{user.displayName} n'a encore de livre.</p>}
 
-                            <div className="mt-8 border-gray-500 border-2 rounded-full">
-                                <button disabled={books.length <= booksDisplayCount} className="w-full rounded-xl text-base py-2 cursor-pointer hover:bg-gray-200 active:bg-gray-300 disabled:cursor-not-allowed disabled:bg-gray-300" onClick={() => setBooksDisplayCount(prev => prev + 5)}>
-                                    Afficher plus
-                                </button>
-                            </div>
+                            {books.length > 0 && (
+                                <div className="mt-8 border-gray-500 border-2 rounded-full">
+                                    <button disabled={books.length <= booksDisplayCount} className="w-full rounded-xl text-base py-2 cursor-pointer hover:bg-gray-200 active:bg-gray-300 disabled:cursor-not-allowed disabled:bg-gray-300" onClick={() => setBooksDisplayCount(prev => prev + 5)}>
+                                        Afficher plus
+                                    </button>
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>

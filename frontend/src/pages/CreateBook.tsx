@@ -104,7 +104,7 @@ const BookForm = ({bookTitleRef, bookDescriptionRef, bookGenreRef, bookGenres, b
         <>
             <div className="mb-6">
                 <div className="flex">
-                    <label className="font-semibold text-base">Titre (0/255)</label>
+                    <label className="font-semibold text-base">Titre</label>
                     <p className="text-red-600">*</p>
                 </div>
                 <div className="my-1.5" />
@@ -124,8 +124,8 @@ const BookForm = ({bookTitleRef, bookDescriptionRef, bookGenreRef, bookGenres, b
                         if(titleIsMaxCharacters) return;
                         setTitleIsMaxCharacters(target.value.length >= 255);
 
-                        const parentElement = target.parentElement as HTMLDivElement;
-                        parentElement.children[0].children[0].textContent = `Titre (${target.value.length}/255)`
+                        // const parentElement = target.parentElement as HTMLDivElement;
+                        // parentElement.children[0].children[0].textContent = `Titre (${target.value.length}/255)`
                     }}
                 />
             </div>
@@ -215,7 +215,7 @@ const BookForm = ({bookTitleRef, bookDescriptionRef, bookGenreRef, bookGenres, b
                     }}
                 >
                     <option value="public">Public</option>
-                    <option value="unlisted">Non-répertorié</option>
+                    {/* <option value="unlisted">Non-répertorié</option> */}
                     <option value="private">Privé</option>
                 </select>
             </div>
@@ -1656,7 +1656,7 @@ const CreateBook = () => {
                             >
                                 Lieux
                             </p>
-                            <p
+                            {/* <p
                                 className={`text-2xl font-semibold mb-4 ${activeScreen === "chapters" ? "text-blue-400" : ""} ${fetchIsActive ? "cursor-not-allowed" : "cursor-pointer"} ${fetchIsActive || bookWasCreated === false ? "hover:text-red-400" : "hover:text-blue-400"} ${fetchIsActive || bookWasCreated === false ? "active:text-red-600" : "active:text-blue-600"} ${bookWasCreated !== true ? "hover:cursor-not-allowed" : ""}`}
                                 onClick={() => {
                                     if(bookWasCreated === true) {
@@ -1667,7 +1667,7 @@ const CreateBook = () => {
                                 }}
                             >
                                 Chapitres
-                            </p>
+                            </p> */}
                         </div>
                         <i><p className={"text-center" + (bookWasCreated === true ? " mb-4" : "")}>Les données qui seront sauvegardées sont celles de l'écran "{frenchScreens[activeScreen]}" uniquement.</p></i>
                         {bookWasCreated === false && <p className="text-center text-red-600 font-semibold mb-4">⛔ Veuillez créer les informations de l'écran "Livre" avant de poursuivre.</p>}
@@ -1696,6 +1696,7 @@ const CreateBook = () => {
                         </div>
                         <div className={activeScreen !== "chapters" ? "hidden" : ""}>
                             <div className="w-full text-center">
+                                <a href={`/book/${bookId}/chapter/handle/create`}></a>
                                 <button
                                     className="px-4 py-2 rounded-lg bg-blue-600 text-white font-semibold hover:bg-blue-800 hover:cursor-pointer active:bg-blue-900 shadow-xl disabled:bg-blue-400 disabled:cursor-not-allowed"
                                 >

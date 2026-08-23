@@ -110,7 +110,7 @@ const BookForm = ({bookTitleRef, bookDescriptionRef, bookGenreRef, bookGenres, b
         <>
             <div className="mb-6">
                 <div className="flex">
-                    <label className="font-semibold text-base">Titre (0/255)</label>
+                    <label className="font-semibold text-base">Titre</label>
                     <p className="text-red-600">*</p>
                 </div>
                 <div className="my-1.5" />
@@ -130,8 +130,8 @@ const BookForm = ({bookTitleRef, bookDescriptionRef, bookGenreRef, bookGenres, b
                         if(titleIsMaxCharacters) return;
                         setTitleIsMaxCharacters(target.value.length >= 255);
 
-                        const parentElement = target.parentElement as HTMLDivElement;
-                        parentElement.children[0].children[0].textContent = `Titre (${target.value.length}/255)`
+                        // const parentElement = target.parentElement as HTMLDivElement;
+                        // parentElement.children[0].children[0].textContent = `Titre (${target.value.length}/255)`
                     }}
                 />
             </div>
@@ -221,7 +221,7 @@ const BookForm = ({bookTitleRef, bookDescriptionRef, bookGenreRef, bookGenres, b
                     }}
                 >
                     <option value="public">Public</option>
-                    <option value="unlisted">Non-répertorié</option>
+                    {/* <option value="unlisted">Non-répertorié</option> */}
                     <option value="private">Privé</option>
                 </select>
             </div>

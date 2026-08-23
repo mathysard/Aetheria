@@ -1,11 +1,12 @@
 interface PropsInterface {
+    id: number;
     title: string;
     readCount: number;
     cover: string;
     likeCount: number;
 }
 
-const BookCard = ({title, cover, readCount, likeCount}: PropsInterface) => {
+const BookCard = ({id, title, cover, readCount, likeCount}: PropsInterface) => {
     const formatter = new Intl.NumberFormat("en-US", {
         notation: "compact"
     });
@@ -15,9 +16,13 @@ const BookCard = ({title, cover, readCount, likeCount}: PropsInterface) => {
             <p title={title} className="text-lg text-center font-medium py-2 my-auto h-18">{title.substring(0, 35) + (title.length > 35 ? "..." : "")}</p>
             <div data-role="Cover" className="w-48 h-76">
                 {cover ? (
-                    <img className="w-full h-full object-cover cursor-pointer rounded-b-lg" src={cover} />
+                    <a href={`/book/${id}`}>
+                        <img className="w-full h-full object-cover cursor-pointer rounded-b-lg" src={cover} />
+                    </a>
                 ) : (
-                    <div className="w-full h-full bg-gray-400 opacity-75" />
+                    <a href={`/book/${id}`}>
+                        <div className="w-full h-full bg-gray-400 opacity-75" />
+                    </a>
                 )}
             </div>
             {/* <div className="flex justify-around pt-2 pb-1">

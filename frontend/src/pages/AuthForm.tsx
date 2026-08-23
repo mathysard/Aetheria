@@ -189,6 +189,15 @@ const AuthForm = () => {
                         if(res.result === true) {
                             toast.success(res.message);
                             setFormIsSubmitted(false);
+                            setFormErrors(
+                                    {
+                                    "displayName": [],
+                                    "username": [],
+                                    "email": [],
+                                    "password": [],
+                                    "confirmPassword": []
+                                }
+                            );
                         }
                     })
                 } catch(error: any) {

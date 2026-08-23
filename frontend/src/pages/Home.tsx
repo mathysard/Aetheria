@@ -40,8 +40,9 @@ const Home = () => {
             <div className="mt-8 mb-8 ml-8">
                 <p className="text-3xl font-semibold">Livres les plus récents</p>
                 <div className="flex gap-12 pt-4">
+                    {books.length === 0 && <p className="text-lg text-gray-500 font-semibold text-center">Il n'y a pas encore de livres.</p>}
                     {books.map((book: any) => (
-                        <BookCard title={book.title} cover={book.coverBase64} readCount={0} likeCount={0} />
+                        <BookCard id={book.id} title={book.title} cover={book.coverBase64} readCount={0} likeCount={0} />
                     ))}
                     {/* <BookCard title="Abandoned Kingdom : The Tale of God" cover="https://marketplace.canva.com/EAFKA0RgDtw/1/0/1003w/canva-brown-and-orange-elegant-simple-young-adult-fantasy-book-cover-Qb8uSVdJDzw.jpg" readCount={313} likeCount={56} />
                     <BookCard title="Echoes Of Tomorrow : A Journey Through Time" cover="https://images.template.net/453953/6x9-Book-Cover-Template-edit-online.png" readCount={18340} likeCount={3567} />
@@ -69,8 +70,9 @@ const Home = () => {
             <div className="mt-16 mb-8 ml-8">
                 <p className="text-3xl font-semibold">Utilisateurs les plus inspirés</p>
                 <div className="flex gap-12 pt-4">
+                    {users.length === 0 && <p className="text-lg text-gray-500 font-semibold text-center">Aucun utilisateur n'a encore de livre.</p>}
                     {users.map((user: any) => (
-                        <UserCard profilePicture={user.profilePictureBase64} username={user.username} />
+                        <UserCard id={user.id} profilePicture={user.profilePictureBase64} username={user.username} />
                     ))}
                     {/* <UserCard profilePicture="https://i.pinimg.com/736x/97/36/80/9736806e978c1eb7a43e7cd68534566d.jpg" username="ryan-potter" />
                     <UserCard profilePicture="https://i.pinimg.com/474x/a8/47/9a/a8479a922b151b03df56a6db105dc5dd.jpg" username="lya_hk" />

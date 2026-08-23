@@ -878,7 +878,7 @@ final class ApiController extends AbstractController
         }
     }
 
-    #[Route('/updateBook/{bookId}/{screen}', name: 'api_create_book')]
+    #[Route('/updateBook/{bookId}/{screen}', name: 'api_update_book')]
     public function apiUpdateBook(Request $request, $bookId = null, $screen = null): Response
     {
         $payload = $request->request->all();
@@ -1495,15 +1495,15 @@ final class ApiController extends AbstractController
         $payload = json_decode($request->getContent(), true);
         // header("Access-Control-Allow-Origin: *");
 
-        $token = $this->authTokensRepository->findByTokenAndValidity($payload["token"]);
+        $token = $this->authTokensRepository->findByTokenAndValidity($payload["token"] ?? "");
         $date = new \DateTime();
 
         if(!$token || ($token && $token->getValidUntil() < $date)) {
-            return new JsonResponse([
-                'result' => false,
-                'type' => 'tokenNotValid',
-                'message' => "Le token n'existe pas ou n'est plus valide."
-            ]);
+            // return new JsonResponse([
+            //     'result' => false,
+            //     'type' => 'tokenNotValid',
+            //     'message' => "Le token n'existe pas ou n'est plus valide."
+            // ]);
         } else {
             $user = $token->getUser();
             $token = $token->getToken();
@@ -1576,11 +1576,15 @@ final class ApiController extends AbstractController
             //     }[];
             // }
 
-            if($book->getCreatedBy() === $user) {
-                $coverPath = $_ENV["BACKEND_PATH"] . "/images/book_covers/" . $book->getCover();
-                $coverType = pathinfo($coverPath, PATHINFO_EXTENSION);
-                $coverData = file_get_contents($coverPath);
-                $coverBase64 = 'data:image/' . $coverType . ';base64,' . base64_encode($coverData);
+            // if($book->getCreatedBy() === $user) {
+                if($book->getCover()) {
+                    $coverPath = $_ENV["BACKEND_PATH"] . "/images/book_covers/" . $book->getCover();
+                    $coverType = pathinfo($coverPath, PATHINFO_EXTENSION);
+                    $coverData = file_get_contents($coverPath);
+                    $coverBase64 = 'data:image/' . $coverType . ';base64,' . base64_encode($coverData);
+                } else {
+                    $coverBase64 = "";
+                }
 
                 $bookToReturn = [
                     "id" => $book->getId(),
@@ -1615,10 +1619,14 @@ final class ApiController extends AbstractController
                         ];
                     }
 
-                    $characterPath = $_ENV["BACKEND_PATH"] . "/images/characters/" . $character->getImage();
-                    $characterType = pathinfo($characterPath, PATHINFO_EXTENSION);
-                    $characterData = file_get_contents($characterPath);
-                    $characterBase64 = 'data:image/' . $characterType . ';base64,' . base64_encode($characterData);
+                    if($character->getImage()) {
+                        $characterPath = $_ENV["BACKEND_PATH"] . "/images/characters/" . $character->getImage();
+                        $characterType = pathinfo($characterPath, PATHINFO_EXTENSION);
+                        $characterData = file_get_contents($characterPath);
+                        $characterBase64 = 'data:image/' . $characterType . ';base64,' . base64_encode($characterData);
+                    } else {
+                        $characterBase64 = "";
+                    }
 
                     $characters[] = [
                         "id" => $character->getId(),
@@ -1653,10 +1661,14 @@ final class ApiController extends AbstractController
                         ];
                     }
 
-                    $locationPath = $_ENV["BACKEND_PATH"] . "/images/locations/" . $location->getImage();
-                    $locationType = pathinfo($locationPath, PATHINFO_EXTENSION);
-                    $locationData = file_get_contents($locationPath);
-                    $locationBase64 = 'data:image/' . $locationType . ';base64,' . base64_encode($locationData);
+                    if($location->getImage()) {
+                        $locationPath = $_ENV["BACKEND_PATH"] . "/images/locations/" . $location->getImage();
+                        $locationType = pathinfo($locationPath, PATHINFO_EXTENSION);
+                        $locationData = file_get_contents($locationPath);
+                        $locationBase64 = 'data:image/' . $locationType . ';base64,' . base64_encode($locationData);
+                    } else {
+                        $locationBase64 = "";
+                    }
 
                     $locations[] = [
                         "id" => $location->getId(),
@@ -1719,13 +1731,13 @@ final class ApiController extends AbstractController
                     'locations' => $locations,
                     'chapters' => $chapters
                 ]);
-            } else {
-                return new JsonResponse([
-                    'result' => false,
-                    'type' => 'bookNotBelongsToUser',
-                    'message' => "Le livre ne vous appartient pas."
-                ]);
-            }
+            // } else {
+                // return new JsonResponse([
+                    // 'result' => false,
+                    // 'type' => 'bookNotBelongsToUser',
+                    // 'message' => "Le livre ne vous appartient pas."
+                // ]);
+            // }
         }
 
         return new JsonResponse([
@@ -1739,15 +1751,15 @@ final class ApiController extends AbstractController
     {
         $payload = json_decode($request->getContent(), true);
 
-        $token = $this->authTokensRepository->findByTokenAndValidity($payload["token"]);
+        $token = $this->authTokensRepository->findByTokenAndValidity($payload["token"] ?? "");
         $date = new \DateTime();
 
         if(!$token || ($token && $token->getValidUntil() < $date)) {
-            return new JsonResponse([
-                'result' => false,
-                'type' => 'tokenNotValid',
-                'message' => "Le token n'existe pas ou n'est plus valide."
-            ]);
+            // return new JsonResponse([
+            //     'result' => false,
+            //     'type' => 'tokenNotValid',
+            //     'message' => "Le token n'existe pas ou n'est plus valide."
+            // ]);
         } else {
             $user = $token->getUser();
             $token = $token->getToken();
@@ -1764,30 +1776,38 @@ final class ApiController extends AbstractController
         }
 
         if($request->query->has('forChapterCreation')) {
-            if($chapter->getCreatedBy() === $user) {
-                return new JsonResponse([
-                    'result' => true,
-                    'chapter' => $this->serializer->serialize($chapter, 'json')
-                ]);
-            } else {
-                return new JsonResponse([
-                    'result' => false,
-                    'type' => 'chapterNotBelongsToUser',
-                    'message' => "Le livre ne vous appartient pas."
-                ]);
-            }
+            return new JsonResponse([
+                'result' => true,
+                'chapter' => $this->serializer->serialize($chapter, 'json')
+            ]);
+            // if($chapter->getCreatedBy() === $user) {
+            // } else {
+            //     return new JsonResponse([
+            //         'result' => false,
+            //         'type' => 'chapterNotBelongsToUser',
+            //         'message' => "Le livre ne vous appartient pas."
+            //     ]);
+            // }
         }
 
         if($request->query->has('forChapterRead')) {
-            $userPath = $_ENV["BACKEND_PATH"] . "/images/profile_pictures/" . $chapter->getBook()->getCreatedBy()->getProfilePicture();
-            $userType = pathinfo($userPath, PATHINFO_EXTENSION);
-            $userData = file_get_contents($userPath);
-            $userBase64 = 'data:image/' . $userType . ';base64,' . base64_encode($userData);
+            if($chapter->getBook()->getCreatedBy()->getProfilePicture()) {
+                $userPath = $_ENV["BACKEND_PATH"] . "/images/profile_pictures/" . $chapter->getBook()->getCreatedBy()->getProfilePicture();
+                $userType = pathinfo($userPath, PATHINFO_EXTENSION);
+                $userData = file_get_contents($userPath);
+                $userBase64 = 'data:image/' . $userType . ';base64,' . base64_encode($userData);
+            } else {
+                $userBase64 = "";
+            }
 
-            $bookPath = $_ENV["BACKEND_PATH"] . "/images/book_covers/" . $chapter->getBook()->getCover();
-            $bookType = pathinfo($bookPath, PATHINFO_EXTENSION);
-            $bookData = file_get_contents($bookPath);
-            $bookBase64 = 'data:image/' . $bookType . ';base64,' . base64_encode($bookData);
+            if($chapter->getBook()->getCover()) {
+                $bookPath = $_ENV["BACKEND_PATH"] . "/images/book_covers/" . $chapter->getBook()->getCover();
+                $bookType = pathinfo($bookPath, PATHINFO_EXTENSION);
+                $bookData = file_get_contents($bookPath);
+                $bookBase64 = 'data:image/' . $bookType . ';base64,' . base64_encode($bookData);
+            } else {
+                $bookBase64 = "";
+            }
 
             return new JsonResponse([
                 'result' => true,
@@ -2055,15 +2075,15 @@ final class ApiController extends AbstractController
     {
         $payload = json_decode($request->getContent(), true);
 
-        $token = $this->authTokensRepository->findByTokenAndValidity($payload["token"]);
+        $token = $this->authTokensRepository->findByTokenAndValidity($payload["token"] ?? "");
         $date = new \DateTime();
 
         if(!$token || ($token && $token->getValidUntil() < $date)) {
-            return new JsonResponse([
-                'result' => false,
-                'type' => 'tokenNotValid',
-                'message' => "Le token n'existe pas ou n'est plus valide."
-            ]);
+            // return new JsonResponse([
+            //     'result' => false,
+            //     'type' => 'tokenNotValid',
+            //     'message' => "Le token n'existe pas ou n'est plus valide."
+            // ]);
         } else {
             $user = $token->getUser();
             $token = $token->getToken();
@@ -2081,19 +2101,31 @@ final class ApiController extends AbstractController
             ]);
         }
 
-        $userPath = $_ENV["BACKEND_PATH"] . "/images/profile_pictures/" . $user->getProfilePicture();
-        $userType = pathinfo($userPath, PATHINFO_EXTENSION);
-        $userData = file_get_contents($userPath);
-        $userBase64 = 'data:image/' . $userType . ';base64,' . base64_encode($userData);
+        if($user->getProfilePicture()) {
+            $userPath = $_ENV["BACKEND_PATH"] . "/images/profile_pictures/" . $user->getProfilePicture();
+            $userType = pathinfo($userPath, PATHINFO_EXTENSION);
+            $userData = file_get_contents($userPath);
+            $userBase64 = 'data:image/' . $userType . ';base64,' . base64_encode($userData);
+        } else {
+            $userBase64 = "";
+        }
 
-        $booksByUser = $this->booksRepository->findBy(["createdBy" => $user->getId(), "isActive" => true, "isDeleted" => false]);
+        $booksByUser = $this->booksRepository->findBy(
+            $id === "me"
+            ? ["createdBy" => $user->getId(), "isActive" => true, "isDeleted" => false]
+            : ["visibility" => "public", "createdBy" => $user->getId(), "isActive" => true, "isDeleted" => false]
+        );
         $books = [];
 
         foreach($booksByUser as $i => $book) {
-            $bookPath = $_ENV["BACKEND_PATH"] . "/images/book_covers/" . $book->getCover();
-            $bookType = pathinfo($bookPath, PATHINFO_EXTENSION);
-            $bookData = file_get_contents($bookPath);
-            $bookBase64 = 'data:image/' . $bookType . ';base64,' . base64_encode($bookData);
+            if($book->getCover()) {
+                $bookPath = $_ENV["BACKEND_PATH"] . "/images/book_covers/" . $book->getCover();
+                $bookType = pathinfo($bookPath, PATHINFO_EXTENSION);
+                $bookData = file_get_contents($bookPath);
+                $bookBase64 = 'data:image/' . $bookType . ';base64,' . base64_encode($bookData);
+            } else {
+                $bookBase64 = "";
+            }
             // $booksByUser[$i]["coverBase64"] = $bookBase64;
             $books[] = [
                 "id" => $book->getId(),
@@ -2132,10 +2164,15 @@ final class ApiController extends AbstractController
         $users = [];
 
         foreach($mostRecentBooks as $i => $book) {
-            $bookPath = $_ENV["BACKEND_PATH"] . "/images/book_covers/" . $book->getCover();
-            $bookType = pathinfo($bookPath, PATHINFO_EXTENSION);
-            $bookData = file_get_contents($bookPath);
-            $bookBase64 = 'data:image/' . $bookType . ';base64,' . base64_encode($bookData);
+            if($book->getCover()) {
+                $bookPath = $_ENV["BACKEND_PATH"] . "/images/book_covers/" . $book->getCover();
+                $bookType = pathinfo($bookPath, PATHINFO_EXTENSION);
+                $bookData = file_get_contents($bookPath);
+                $bookBase64 = 'data:image/' . $bookType . ';base64,' . base64_encode($bookData);
+            } else {
+                $bookBase64 = "";
+            }
+
             $books[] = [
                 "id" => $book->getId(),
                 "title" => $book->getTitle(),
@@ -2156,24 +2193,32 @@ final class ApiController extends AbstractController
         }
 
         foreach($mostRecentUsers as $i => $user) {
-            $userPath = $_ENV["BACKEND_PATH"] . "/images/profile_pictures/" . $user->getProfilePicture();
-            $userType = pathinfo($userPath, PATHINFO_EXTENSION);
-            $userData = file_get_contents($userPath);
-            $userBase64 = 'data:image/' . $userType . ';base64,' . base64_encode($userData);
-            $users[] = [
-                "id" => $user->getId(),
-                "username" => $user->getUsername(),
-                "profilePicture" => $user->getProfilePicture(),
-                "profilePictureBase64" => $userBase64,
-                "status" => $user->getStatus(),
-                "active" => $user->isActive(),
-                "deleted" => $user->isDeleted(),
-                "createdAt" => $user->getCreatedAt(),
-                "createdBy" => $user->getCreatedBy(),
-                "updatedAt" => $user->getUpdatedAt(),
-                "updatedBy" => $user->getUpdatedBy(),
-                "booksCount" => $this->booksRepository->getBooksCountByUser($user)
-            ];
+            if($user->getProfilePicture()) {
+                $userPath = $_ENV["BACKEND_PATH"] . "/images/profile_pictures/" . $user->getProfilePicture();
+                $userType = pathinfo($userPath, PATHINFO_EXTENSION);
+                $userData = file_get_contents($userPath);
+                $userBase64 = 'data:image/' . $userType . ';base64,' . base64_encode($userData);
+            } else {
+                $userBase64 = "";
+            }
+
+            $userBooksCount = $this->booksRepository->getBooksCountByUser($user);
+            if($userBooksCount > 0) {
+                $users[] = [
+                    "id" => $user->getId(),
+                    "username" => $user->getUsername(),
+                    "profilePicture" => $user->getProfilePicture(),
+                    "profilePictureBase64" => $userBase64,
+                    "status" => $user->getStatus(),
+                    "active" => $user->isActive(),
+                    "deleted" => $user->isDeleted(),
+                    "createdAt" => $user->getCreatedAt(),
+                    "createdBy" => $user->getCreatedBy(),
+                    "updatedAt" => $user->getUpdatedAt(),
+                    "updatedBy" => $user->getUpdatedBy(),
+                    "booksCount" => $this->booksRepository->getBooksCountByUser($user)
+                ];
+            }
         }
 
         usort($users, fn($a, $b) => $b["booksCount"] <=> $a["booksCount"]);
@@ -2198,10 +2243,15 @@ final class ApiController extends AbstractController
         $users = [];
 
         foreach($booksBySearch as $i => $book) {
-            $bookPath = $_ENV["BACKEND_PATH"] . "/images/book_covers/" . $book->getCover();
-            $bookType = pathinfo($bookPath, PATHINFO_EXTENSION);
-            $bookData = file_get_contents($bookPath);
-            $bookBase64 = 'data:image/' . $bookType . ';base64,' . base64_encode($bookData);
+            if($book->getCover()) {
+                $bookPath = $_ENV["BACKEND_PATH"] . "/images/book_covers/" . $book->getCover();
+                $bookType = pathinfo($bookPath, PATHINFO_EXTENSION);
+                $bookData = file_get_contents($bookPath);
+                $bookBase64 = 'data:image/' . $bookType . ';base64,' . base64_encode($bookData);
+            } else {
+                $bookBase64 = "";
+            }
+
             $books[] = [
                 "id" => $book->getId(),
                 "title" => $book->getTitle(),
@@ -2222,10 +2272,15 @@ final class ApiController extends AbstractController
         }
 
         foreach($usersBySearch as $i => $user) {
-            $userPath = $_ENV["BACKEND_PATH"] . "/images/profile_pictures/" . $user->getProfilePicture();
-            $userType = pathinfo($userPath, PATHINFO_EXTENSION);
-            $userData = file_get_contents($userPath);
-            $userBase64 = 'data:image/' . $userType . ';base64,' . base64_encode($userData);
+            if($user->getProfilePicture()) {
+                $userPath = $_ENV["BACKEND_PATH"] . "/images/profile_pictures/" . $user->getProfilePicture();
+                $userType = pathinfo($userPath, PATHINFO_EXTENSION);
+                $userData = file_get_contents($userPath);
+                $userBase64 = 'data:image/' . $userType . ';base64,' . base64_encode($userData);
+            } else {
+                $userBase64 = "";
+            }
+
             $users[] = [
                 "id" => $user->getId(),
                 "username" => $user->getUsername(),
