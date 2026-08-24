@@ -5,6 +5,7 @@ import { Loading } from '../components/Loading';
 
 interface BookThumbnailInterface {
     formatter: Intl.NumberFormat;
+    id: number;
     title: string;
     cover: string;
     views?: number;
@@ -22,17 +23,21 @@ interface UserThumbnailInterface {
     booksCount: number;
 }
 
-const BookThumbnail = ({ formatter, title, cover, description }: BookThumbnailInterface) => {
+const BookThumbnail = ({ formatter, id, title, cover, description }: BookThumbnailInterface) => {
     return (
         <div className="flex gap-6">
             <div className="w-32 h-48 bg-black text-white flex items-center justify-center text-xs rounded-md">
-                <div className="w-full h-full overflow-hidden cursor-pointer">
-                    <img className="w-full h-full" src={cover} />
-                </div>
+                <a href={`/book/${id}`}>
+                    <div className="w-full h-full overflow-hidden cursor-pointer">
+                        <img className="w-full h-full" src={cover} />
+                    </div>
+                </a>
             </div>
 
             <div className="flex flex-col gap-2">
-                <h3 className="font-semibold text-lg cursor-pointer hover:underline">{title}</h3>
+                <a href={`/book/${id}`}>
+                    <h3 className="font-semibold text-lg cursor-pointer hover:underline">{title}</h3>
+                </a>
 
                 {/* <div className="flex items-center gap-3 text-sm text-gray-500">
                     <div className="flex justify-around pt-2 pb-1">
@@ -144,6 +149,7 @@ const SearchPage = () => {
                                     <div className="mb-8">
                                         <BookThumbnail
                                             formatter={formatter}
+                                            id={book.id}
                                             title={book.title}
                                             cover={book.coverBase64}
                                             // views={book.views}
@@ -170,7 +176,7 @@ const SearchPage = () => {
                                             formatter={formatter}
                                             id={user.id}
                                             displayName={user.displayName}
-                                            userName={user.userName}
+                                            userName={user.username}
                                             profilePicture={user.profilePictureBase64}
                                             // followersCount={user.followersCount}
                                             booksCount={user.booksCount}
