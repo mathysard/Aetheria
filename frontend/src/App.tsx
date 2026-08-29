@@ -7,17 +7,20 @@ import AuthForm from './pages/AuthForm';
 import CreateChapter from './pages/CreateChapter';
 import UserPage from './pages/UserPage';
 import ReadChapter from './pages/ReadChapter';
-import GenericData from './pages/GenericData';
 import UpdateUser from './pages/UpdateUser';
 import SearchPage from './pages/SearchPage';
 import UpdateBook from './pages/UpdateBook';
 import ReadBook from './pages/ReadBook';
+import { Error } from './components/Error';
+import Versioning from './pages/Versioning';
 
 interface RoutesTitleInterface {
   [key: string]: string;
 }
 
 const App = () => {
+    const token = localStorage.getItem("auth_token");
+
     useEffect(() => {
         const url = window.location.pathname;
         const baseTitle = "Aetheria";
@@ -27,7 +30,8 @@ const App = () => {
             "/login": "Connexion",
             "/register": "Inscription",
             "/user/me": "Mon profil",
-            "/data/generic": "Données génériques"
+            "/data/generic": "Données génériques",
+            "/versioning": "Historique des versions"
         }
 
         if(routesTitle.hasOwnProperty(url)) {
@@ -69,6 +73,24 @@ const App = () => {
         return;
     }, []);
 
+    useEffect(() => {
+        if(token === null) return;
+
+        fetch("https://127.0.0.1:8000/api/token/validate", {
+            method: 'POST',
+            body: JSON.stringify({
+                token: token
+            })
+        })
+        .then(res => res.ok ? res.json() : null)
+        .then(res => {
+            if(res.result === false) {
+                localStorage.removeItem("auth_token");
+                window.location.href = "/";
+            }
+        })
+    }, []);
+
     return (
         <>
             {/* {errors && errors.length > 0 && (
@@ -103,12 +125,18 @@ const App = () => {
 
                 <Route
                     path="/createBook"
-                    element={<CreateBook />}
+                    element={
+                        token === null || (token as string).length === 0
+                        ? <Error message="Vous devez être connecté pour utiliser cette page." /> : <CreateBook />
+                    }
                 />
 
                 <Route
                     path="/book/:bookId/update"
-                    element={<UpdateBook />}
+                    element={
+                        token === null || (token as string).length === 0
+                        ? <Error message="Vous devez être connecté pour utiliser cette page." /> : <UpdateBook />
+                    }
                 />
 
                 <Route
@@ -116,10 +144,10 @@ const App = () => {
                     element={<ReadBook />}
                 />
 
-                <Route
+                {/* <Route
                     path="/generic/data"
                     element={<GenericData />}
-                />
+                /> */}
 
                 <Route
                     path="/user/:userId/update"
@@ -133,12 +161,20 @@ const App = () => {
 
                 <Route
                     path="/book/:bookId/chapter/handle/:chapterId"
-                    element={<CreateChapter />}
+                    element={
+                        token === null || (token as string).length === 0
+                        ? <Error message="Vous devez être connecté pour utiliser cette page." /> : <CreateChapter />
+                    }
                 />
 
                 <Route
                     path="/search/:userSearch"
                     element={<SearchPage />}
+                />
+
+                <Route
+                    path="/versioning"
+                    element={<Versioning />}
                 />
             </Routes>
             </Router>

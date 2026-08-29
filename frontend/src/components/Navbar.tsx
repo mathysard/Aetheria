@@ -7,7 +7,7 @@ const Navbar = () => {
     const user = localStorage.getItem('auth_token') ? isJsonString(atob(localStorage.getItem('auth_token') as string)) ? JSON.parse(atob(localStorage.getItem('auth_token') as string)) : null : null;
     const { userSearch } = useParams();
     const [dropdownIsOpen, setDropdownIsOpen] = useState(0);
-    const [language, setLanguage] = useState(localStorage.getItem('language') ?? navigator.language.split('-')[0]);
+    // const [language, setLanguage] = useState(localStorage.getItem('language') ?? navigator.language.split('-')[0]);
     const [search, setSearch] = useState(userSearch ?? "");
 
     // console.log(user.profilePicture)

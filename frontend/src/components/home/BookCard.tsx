@@ -6,10 +6,10 @@ interface PropsInterface {
     likeCount: number;
 }
 
-const BookCard = ({id, title, cover, readCount, likeCount}: PropsInterface) => {
-    const formatter = new Intl.NumberFormat("en-US", {
-        notation: "compact"
-    });
+const BookCard = ({id, title, cover}: PropsInterface) => {
+    // const formatter = new Intl.NumberFormat("en-US", {
+    //     notation: "compact"
+    // });
 
     return (
         <div className="border-2 rounded-xl w-49 wrap-break-word">

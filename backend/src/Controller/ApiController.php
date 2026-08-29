@@ -25,6 +25,7 @@ use App\Repository\LocationsRepository;
 use App\Repository\LocationUserFieldsRepository;
 use App\Repository\RolesRepository;
 use App\Repository\UsersRepository;
+use App\Service\TokenService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -51,6 +52,7 @@ final class ApiController extends AbstractController
         private LocationUserFieldsRepository $locationUserFieldsRepository,
         private ChaptersRepository $chaptersRepository,
         private BookGenresRepository $bookGenresRepository,
+        private TokenService $tokenService,
         private SerializerInterface $serializer
     ) {}
 
@@ -242,6 +244,9 @@ final class ApiController extends AbstractController
 
         $user = $this->usersRepository->findOneBy(["email" => $payload["email"]]);
 
+        $dateTime = new \DateTime();
+        $dateTimePlus15Minutes = new \DateTime(date('Y-m-d H:i:s', strtotime(date('Y-m-d H:i:s') . " +15 minutes")));
+
         if(!$user) {
             return new JsonResponse([
                 'result' => false,
@@ -250,7 +255,39 @@ final class ApiController extends AbstractController
             ]);
         }
 
+        if($user->getLoginFailuresCount() >= 5) {
+            $lastLoginFailure = $user->getLastLoginFailure();
+
+            if($lastLoginFailure <= $dateTime) {
+                $user->setLoginFailuresCount(0);
+                $user->setLastLoginFailure(null);
+
+                $this->entityManager->persist($user);
+                $this->entityManager->flush();
+            }
+
+            $lastLoginFailureFormat = "";
+
+            if($lastLoginFailure->format('d-m-Y') === date('d-m-Y')) {
+                $lastLoginFailureFormat = " à " . $lastLoginFailure->format('H:i:s') . ".";
+            } else {
+                $lastLoginFailureFormat = " le " . $lastLoginFailure->format('d-m-Y') . " à " . $lastLoginFailure->format('H:i:s') . ".";
+            }
+
+            return new JsonResponse([
+                'result' => false,
+                'type' => 'passwordNotMatches',
+                'message' => "Vous avez échoué la connexion trop de fois. Veuillez réessayer " . $lastLoginFailureFormat,
+            ]);
+        }
+
         if(!password_verify($payload["password"], $user->getPassword())) {
+            $user->setLoginFailuresCount($user->getLoginFailuresCount() + 1);
+            $user->setLastLoginFailure($dateTimePlus15Minutes);
+
+            $this->entityManager->persist($user);
+            $this->entityManager->flush();
+
             return new JsonResponse([
                 'result' => false,
                 'type' => 'passwordNotMatches',
@@ -266,6 +303,12 @@ final class ApiController extends AbstractController
                 'token' => $userHasValidToken->getToken()
             ]);
         }
+
+        $user->setLoginFailuresCount(0);
+        $user->setLastLoginFailure(null);
+
+        $this->entityManager->persist($user);
+        $this->entityManager->flush();
 
         $authToken = new AuthTokens();
 
@@ -287,7 +330,7 @@ final class ApiController extends AbstractController
         $authToken->setStatus("N");
         $authToken->setIsActive(true);
         $authToken->setIsDeleted(false);
-        $authToken->setCreatedAt(new \DateTime());
+        $authToken->setCreatedAt($dateTime);
 
         $this->entityManager->persist($authToken);
         $this->entityManager->flush();
@@ -323,6 +366,16 @@ final class ApiController extends AbstractController
             'result' => true,
             'message' => "Vous êtes déconnecté !"
         ]);
+    }
+
+    #[Route('/token/validate', name: 'api_validate_token')]
+    public function apiValidateToken(Request $request): Response
+    {
+        $payload = json_decode($request->getContent(), true);
+        $token = $payload["token"];
+        $tokenValidation = $this->tokenService->validateToken($token);
+        
+        return new JsonResponse($tokenValidation);
     }
 
     #[Route('/genres', name: 'api_genres')]

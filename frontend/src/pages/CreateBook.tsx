@@ -95,9 +95,8 @@ interface BookFormInterface {
     fetchIsActive: boolean;
 }
 
-const BookForm = ({bookTitleRef, bookDescriptionRef, bookGenreRef, bookGenres, bookKeywordsRef, bookIsNsfwRef, bookTriggerWarningsRef, bookVisibilityRef, bookFriendsOnlyRef, fetchIsActive}: BookFormInterface) => {
+const BookForm = ({bookTitleRef, bookDescriptionRef, bookGenreRef, bookGenres, bookIsNsfwRef, bookTriggerWarningsRef, bookVisibilityRef, fetchIsActive}: BookFormInterface) => {
     const [triggerWarningsAreDisplayed, setTriggerWarningsAreDisplayed] = useState(false);
-    const [friendsOnlyIsDisplayed, setFriendsOnlyIsDisplayed] = useState(false);
     const [titleIsMaxCharacters, setTitleIsMaxCharacters] = useState(false);
 
     return (
@@ -208,26 +207,12 @@ const BookForm = ({bookTitleRef, bookDescriptionRef, bookGenreRef, bookGenres, b
                     name="visibility"
                     disabled={fetchIsActive}
                     className="bg-neutral-secondary-medium border-2 border-gray-400 text-heading text-sm rounded-lg focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs placeholder:text-body"
-                    onChange={(e) => {
-                        const target = e.target as HTMLSelectElement;
-
-                        setFriendsOnlyIsDisplayed(target.value === "unlisted");
-                    }}
                 >
                     <option value="public">Public</option>
                     {/* <option value="unlisted">Non-répertorié</option> */}
                     <option value="private">Privé</option>
                 </select>
             </div>
-            {/* <div className={!friendsOnlyIsDisplayed ? "hidden" : ""}>
-                <label className="font-semibold text-base mr-2">Visible aux ami(e)s uniquement</label>
-                <input
-                    type="checkbox"
-                    id="bookFriendsOnly"
-                    ref={bookFriendsOnlyRef}
-                    name="friendsOnly"
-                />
-            </div> */}
         </>
     );
 }
@@ -1439,7 +1424,6 @@ const CreateBook = () => {
     const [genres, setGenres] = useState([]);
     const [cover, setCover] = useState<any>(null);
     const [coverBase64, setCoverBase64] = useState<string>();
-    // const [fetchState, setFetchState] = useState<"book"|"characters"|"relations"|"locations">("characters");
     const [fetchIsActive, setFetchIsActive] = useState(false);
     const [bookWasCreated, setBookWasCreated] = useState(false);
     const [bookId, setBookId] = useState(0);
